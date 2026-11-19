@@ -105,6 +105,8 @@ GNUTLS_CONFIGURE_FLAGS=(
   --without-tpm --without-tpm2
   --disable-nls --disable-tools --disable-doc --disable-tests --disable-cxx --disable-guile
   "LDFLAGS=-L$DEPS_PREFIX/lib -Wl,-rpath,@loader_path"   # finds libgmp next to libgnutls
+  # nettle is static, so its link checks must also name gmp (configure only tries -lhogweed alone)
+  "NETTLE_LIBS=-lnettle" "HOGWEED_LIBS=-lhogweed -lnettle -lgmp" "GMP_LIBS=-lgmp"
 )
 FREETYPE_CONFIGURE_FLAGS=(
   --with-bzip2=yes --with-png=no --with-harfbuzz=no --with-brotli=no --with-zlib=no
