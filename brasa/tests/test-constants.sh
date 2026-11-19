@@ -39,7 +39,10 @@ QUOTED_ARG='"x y"'
 # ---------- Limits (same numbers as brasa_constants.h) ----------
 MAX_OPTIONS_CHARS=1024
 TOO_LONG_OPTIONS_CHARS=$((MAX_OPTIONS_CHARS + 1))
-MAX_CMDLINE_CHARS=32767
+MAX_CMDLINE_CHARS=32767                          # Windows limit, terminator included
+MAX_RESULT_CHARS=$((MAX_CMDLINE_CHARS - 1))      # longest line that can be appended to
+QUOTES_AROUND_PATH=2
+SEPARATORS_AROUND_ARGS=2                         # path-args and args-options
 LONG_ARGS_CHARS=32000
 LONG_OPTIONS_CHARS=1000
 FILL_CHAR="a"

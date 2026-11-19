@@ -1,7 +1,8 @@
-/* spawner.exe [--app] [--repeat N] <child> [args...]
+/* spawner.exe [--app] [--repeat N] [--pad N] <child> [args...]
  *
  * Starts <child> with CreateProcessW and waits for it. The line is "<child>" followed by the raw
- * args; --app also passes <child> as lpApplicationName. With --app and nothing after <child>
+ * args, then --pad N as one more argument of N 'a' (for lines too long to pass as arguments);
+ * --app also passes <child> as lpApplicationName. With --app and nothing after <child>
  * the line is empty. --repeat N runs the child N times and
  * prints the total milliseconds (QueryPerformanceCounter). */
 #include <windows.h>
@@ -9,6 +10,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 
+#define PAD_CHAR L'a'
 #define EXIT_USAGE 2
 #define EXIT_NO_MEMORY 3
 #define EXIT_CREATE_FAILED 4
@@ -18,6 +20,7 @@ struct options
 {
     BOOL use_app_name;
     int repeat;
+    int pad_chars;
     const WCHAR *child;
     int first_arg;
 };
@@ -32,9 +35,10 @@ static BOOL parse_options( int argc, WCHAR **argv, struct options *opt )
     {
         if (!wcscmp( argv[i], L"--app" )) opt->use_app_name = TRUE;
         else if (!wcscmp( argv[i], L"--repeat" ) && i + 1 < argc) opt->repeat = _wtoi( argv[++i] );
+        else if (!wcscmp( argv[i], L"--pad" ) && i + 1 < argc) opt->pad_chars = _wtoi( argv[++i] );
         else break;
     }
-    if (i >= argc || opt->repeat < 1) return FALSE;
+    if (i >= argc || opt->repeat < 1 || opt->pad_chars < 0) return FALSE;
     opt->child = argv[i];
     opt->first_arg = i + 1;
     return TRUE;
@@ -42,7 +46,7 @@ static BOOL parse_options( int argc, WCHAR **argv, struct options *opt )
 
 static WCHAR *build_line( int argc, WCHAR **argv, const struct options *opt )
 {
-    size_t size = wcslen( opt->child ) + 3 + 2;
+    size_t size = wcslen( opt->child ) + 3 + opt->pad_chars + 2;
     WCHAR *line;
     int i;
 
@@ -50,6 +54,13 @@ static WCHAR *build_line( int argc, WCHAR **argv, const struct options *opt )
     if (!(line = malloc( size * sizeof(WCHAR) ))) return NULL;
     swprintf( line, size, L"\"%ls\"", opt->child );
     for (i = opt->first_arg; i < argc; i++) swprintf( line + wcslen( line ), size, L" %ls", argv[i] );
+    if (opt->pad_chars)
+    {
+        size_t length = wcslen( line );
+        line[length++] = L' ';
+        wmemset( line + length, PAD_CHAR, opt->pad_chars );
+        line[length + opt->pad_chars] = 0;
+    }
     return line;
 }
 
@@ -79,7 +90,7 @@ int wmain( int argc, WCHAR **argv )
     if (!parse_options( argc, argv, &opt )) return EXIT_USAGE;
     line = build_line( argc, argv, &opt );
     if (!line) return EXIT_NO_MEMORY;
-    if (opt.use_app_name && opt.first_arg == argc) line[0] = 0;
+    if (opt.use_app_name && opt.first_arg == argc && !opt.pad_chars) line[0] = 0;
 
     QueryPerformanceFrequency( &freq );
     QueryPerformanceCounter( &start );

@@ -19,6 +19,11 @@ check "compose_line adds arguments" '"C:\x.exe" a b' "$(compose_line 'C:\x.exe' 
 check "compose_line adds options after arguments" '"C:\x.exe" a b --o' "$(compose_line 'C:\x.exe' "a b" "--o")"
 check "compose_line adds options without arguments" '"C:\x.exe" --o' "$(compose_line 'C:\x.exe' "" "--o")"
 
+# args_length_for_total: length of the one argument that makes the whole line total characters
+check "args_length_for_total subtracts path, quotes, two spaces and options" 5 "$(args_length_for_total 20 'C:\x.exe' '--o')"
+check "a line built with that length has the total length" 20 \
+  "$(compose_line 'C:\x.exe' "$(repeat_char a "$(args_length_for_total 20 'C:\x.exe' '--o')")" '--o' | wc -c | tr -d ' ')"
+
 # win_path_of / z_path_of
 check "win_path_of turns slashes into backslashes" 'C:\brasa-test\bin\a.exe' "$(win_path_of "bin/a.exe")"
 check "win_path_of keeps spaces" 'C:\brasa-test\dir with spaces\a.exe' "$(win_path_of "dir with spaces/a.exe")"

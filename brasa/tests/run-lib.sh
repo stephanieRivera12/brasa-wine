@@ -10,6 +10,12 @@ compose_line() {
   printf '%s' "$line"
 }
 
+# Length of the single argument that makes compose_line(path, argument, options) total characters.
+args_length_for_total() {
+  local total="$1" path="$2" options="$3"
+  printf '%s' "$((total - ${#path} - QUOTES_AROUND_PATH - SEPARATORS_AROUND_ARGS - ${#options}))"
+}
+
 # Windows path of a file relative to the test folder of the prefix.
 win_path_of() {
   local relative="$1"

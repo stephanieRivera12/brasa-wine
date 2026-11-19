@@ -86,7 +86,7 @@ expect_spawn() {
   install_child "$relative"
   window="${WIN_PREFIX:-}$(win_path_of "$relative")"
   spawn "$window" "$@" >/dev/null
-  expect "${EXPECT_LABEL:-$relative}" "$(compose_line "$window" "$*" "$options")" "$(received_line)"
+  expect "${EXPECT_LABEL:-$relative}" "$(compose_line "$window" "${EXPECT_ARGS-$*}" "$options")" "$(received_line)"
 }
 
 HELPER="bin/$HELPER_EXE"
@@ -175,6 +175,31 @@ case_resultTooLongIgnored() {
   expect_spawn "$HELPER" "" "$(repeat_char "$FILL_CHAR" "$LONG_ARGS_CHARS")"
 }
 
+case_maxOptionsAccepted() {
+  local options
+  options="$(repeat_char "$FILL_CHAR" "$MAX_OPTIONS_CHARS")"
+  reg_put "$REG_VALUE_NAME" "$options"
+  expect_spawn "$HELPER" "$options" $CHILD_ARGS
+}
+
+# Result of exactly MAX_RESULT_CHARS plus the given extra characters, through one padded argument.
+expect_result_of_length() {
+  local extra="$1" options="$2" window pad
+  window="$(win_path_of "$HELPER")"
+  pad="$(repeat_char "$FILL_CHAR" "$(args_length_for_total "$((MAX_RESULT_CHARS + extra))" "$window" "$STEAM_OPTIONS")")"
+  SPAWN_FLAGS="--pad ${#pad}" EXPECT_ARGS="$pad" expect_spawn "$HELPER" "$options"
+}
+
+case_resultAtLimitAppended() {
+  reg_put "$REG_VALUE_NAME" "$STEAM_OPTIONS"
+  expect_result_of_length 0 "$STEAM_OPTIONS"
+}
+
+case_resultOverLimitIgnored() {
+  reg_put "$REG_VALUE_NAME" "$STEAM_OPTIONS"
+  expect_result_of_length 1 ""
+}
+
 # The ACL cannot be undone by the test, so this case gets a prefix of its own.
 case_unreadableKey() {
   new_prefix
@@ -250,7 +275,7 @@ case_performance() {
 CASES=(
   appendsOptions noKeyUnchanged otherExeUnchanged caseInsensitive similarNamesUnchanged
   spacesAndQuotes appNameOnly noArguments uncPath from32to64 from64to32 tooLongIgnored
-  emptyIgnored wrongTypeIgnored controlCharsIgnored resultTooLongIgnored logHasNoContent
+  emptyIgnored wrongTypeIgnored controlCharsIgnored resultTooLongIgnored maxOptionsAccepted resultAtLimitAppended resultOverLimitIgnored logHasNoContent
   performance unreadableKey
 )
 
