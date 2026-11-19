@@ -40,9 +40,13 @@ macho_problems() {
   load_command_problems "$dependencies" "$load_commands" "$archs"
 }
 
-# Succeeds for the first four bytes (hex) of a thin 64-bit or fat Mach-O.
+# Succeeds for the first four bytes (hex) of any Mach-O magic (thin, either endianness, or fat).
 is_macho_magic() {
-  [[ "$1" == "cffaedfe" || "$1" == "cafebabe" ]]
+  local magic
+  for magic in "${MACHO_MAGICS[@]}"; do
+    [[ "$1" == "$magic" ]] && return 0
+  done
+  return 1
 }
 
 is_macho() {

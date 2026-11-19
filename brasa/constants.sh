@@ -261,3 +261,7 @@ CHECK_PROBLEMS_SHOWN=20
 
 # ---------- Stripping (PE dlls need the mingw tool of their architecture) ----------
 PE_STRIP_TOOLS=("lib/wine/i386-windows:i686-w64-mingw32-strip" "lib/wine/x86_64-windows:x86_64-w64-mingw32-strip")
+
+# ---------- Package safety ----------
+PREVIOUS_ENGINE_SUFFIX=".previous"
+MACHO_MAGICS=(feedface cefaedfe feedfacf cffaedfe cafebabe cafebabf)

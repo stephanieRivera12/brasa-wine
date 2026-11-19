@@ -48,6 +48,9 @@ check "no architecture is a problem" 1 "$(load_command_problems "$OTOOL_DEPS_OK"
 # is_macho_magic
 check "thin 64-bit Mach-O magic" 0 "$(status_of is_macho_magic "cffaedfe")"
 check "fat Mach-O magic" 0 "$(status_of is_macho_magic "cafebabe")"
+for magic in feedface cefaedfe feedfacf cffaedfe cafebabe cafebabf; do
+  check "Mach-O magic $magic is accepted" 0 "$(status_of is_macho_magic "$magic")"
+done
 check "text is not Mach-O" 1 "$(status_of is_macho_magic "23212f62")"
 check "empty magic is not Mach-O" 1 "$(status_of is_macho_magic "")"
 

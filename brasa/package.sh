@@ -98,12 +98,13 @@ extract_license_member() {
 
 # Copies the licence files found at the top of an unpacked addon folder.
 copy_addon_licenses() {
-  local pkg="$1" dest="$2" entry component folder pattern
+  local pkg="$1" dest="$2" entry component folder pattern file
   for entry in "${ADDON_LICENSE_COMPONENTS[@]}"; do
     component="${entry%%:*}"; folder="$pkg/${entry#*:}"
     for pattern in "${ADDON_LICENSE_PATTERNS[@]}"; do
-      find "$folder" -maxdepth 1 -type f -name "$pattern" \
-        -exec bash -c 'mkdir -p "$1/$2" && cp "$3" "$1/$2/"' _ "$dest" "$component" {} \;
+      while IFS= read -r file; do
+        copy_license_file "$dest" "$component" "$file"
+      done < <(find "$folder" -maxdepth 1 -type f -name "$pattern")
     done
   done
 }
@@ -180,9 +181,15 @@ assemble_engine() {
 }
 
 publish_engine() {
-  rm -rf -- "${ENGINE_OUTPUT:?}"
+  local previous="$ENGINE_OUTPUT$PREVIOUS_ENGINE_SUFFIX"
   mkdir -p "$ENGINES_VENDOR_DIR"
-  mv "$1" "$ENGINE_OUTPUT"
+  rm -rf -- "${previous:?}"
+  [[ ! -e "$ENGINE_OUTPUT" ]] || mv "$ENGINE_OUTPUT" "$previous"
+  mv "$1" "$ENGINE_OUTPUT" || {
+    [[ ! -e "$previous" ]] || mv "$previous" "$ENGINE_OUTPUT"
+    return 1
+  }
+  rm -rf -- "${previous:?}"
 }
 
 require_sources() {
@@ -194,7 +201,7 @@ require_sources() {
 
 main() {
   local pkg="$PACKAGE_WORK_DIR/engine"
-  PATH="$TOOLS_PATH:$PATH"
+  PATH="$TOOLS_PATH:$SYSTEM_PATH"
   require_sources
   download_and_verify_addons || exit "$?"
   say "Assembling $pkg"

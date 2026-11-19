@@ -101,4 +101,17 @@ check "other files have no PE tool" "" "$(pe_strip_tool_for "$PKG/bin/wine")"
 check "MZ is the PE magic" 0 "$(status_of is_pe_magic "4d5a")"
 check "text is not PE" 1 "$(status_of is_pe_magic "2321")"
 
+# publish_engine keeps the previous engine unless the new one is in place
+ENGINES_VENDOR_DIR="$SCRATCH/engines"; ENGINE_OUTPUT="$ENGINES_VENDOR_DIR/wine-brasa-test"
+mkdir -p "$ENGINE_OUTPUT" "$SCRATCH/new"; printf old > "$ENGINE_OUTPUT/id"; printf new > "$SCRATCH/new/id"
+check "a failed publish fails" 1 "$(status_of publish_engine "$SCRATCH/absent")"
+check "a failed publish keeps the previous engine" "old" "$(cat "$ENGINE_OUTPUT/id")"
+check "a failed publish leaves no leftovers" 1 "$(ls "$ENGINES_VENDOR_DIR" | wc -l | tr -d ' ')"
+publish_engine "$SCRATCH/new"
+check "a publish installs the new engine" "new" "$(cat "$ENGINE_OUTPUT/id")"
+check "a publish removes the old one" 1 "$(ls "$ENGINES_VENDOR_DIR" | wc -l | tr -d ' ')"
+rm -rf "$ENGINE_OUTPUT"; mkdir -p "$SCRATCH/new2"
+publish_engine "$SCRATCH/new2"
+check "a first publish works without a previous engine" 1 "$([[ -d "$ENGINE_OUTPUT" ]] && echo 1 || echo 0)"
+
 finish_checks
