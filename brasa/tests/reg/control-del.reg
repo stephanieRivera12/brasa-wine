@@ -1,0 +1,4 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Software\Brasa\AppendCommandLine]
+"steamwebhelper.exe"=hex(1):2d,00,2d,00,61,00,7f,00,00,00

@@ -7,27 +7,11 @@ TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$TESTS_DIR/../constants.sh"
 # shellcheck source=../lib.sh
 source "$TESTS_DIR/../lib.sh"
+# shellcheck source=check.sh
+source "$TESTS_DIR/check.sh"
 
 SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/brasa-test.XXXXXX")"
 trap 'rm -rf "${SCRATCH:?}"' EXIT
-
-failures=0
-
-check() {
-  local name="$1" expected="$2" actual="$3"
-  if [[ "$expected" == "$actual" ]]; then
-    printf 'ok   %s\n' "$name"
-  else
-    printf 'FAIL %s (expected %q, got %q)\n' "$name" "$expected" "$actual"
-    failures=$((failures + 1))
-  fi
-}
-
-status_of() {
-  local status=0
-  ( "$@" ) >/dev/null 2>&1 || status=$?
-  printf '%s' "$status"
-}
 
 SAMPLE_FILE="$SCRATCH/sample.txt"
 printf 'hello\n' > "$SAMPLE_FILE"
@@ -153,8 +137,4 @@ check "leaks_in on a missing file reports it" 1 "$(OTOOL_TOOL=false leaks_in "$S
 check "leaks_in reports a build path" 1 "$(leaks_in "$DIRTY_BINARY" "@loader_path/../.." | grep -c "contains a build path")"
 check "leaks_in sees no build path in a clean binary" 0 "$(leaks_in "$CLEAN_BINARY" "@loader_path/../.." | grep -c "contains a build path")"
 
-if ((failures > 0)); then
-  printf '%d test(s) failed\n' "$failures"
-  exit 1
-fi
-printf 'all tests passed\n'
+finish_checks
