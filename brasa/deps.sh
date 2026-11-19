@@ -133,7 +133,7 @@ main() {
   build_autotools "gmp-$GMP_VERSION" "$GMP_SOURCE_DIR" "${GMP_CONFIGURE_FLAGS[@]}"
   build_from_archive NETTLE "nettle-$NETTLE_VERSION" "${NETTLE_CONFIGURE_FLAGS[@]}"
   build_autotools "gnutls-$GNUTLS_VERSION" "$GNUTLS_SOURCE_DIR" "${GNUTLS_CONFIGURE_FLAGS[@]}"
-  build_autotools "freetype-$FREETYPE_VERSION" "$FREETYPE_SOURCE_DIR" "${FREETYPE_CONFIGURE_FLAGS[@]}"
+  build_from_archive FREETYPE "freetype-$FREETYPE_VERSION" "${FREETYPE_CONFIGURE_FLAGS[@]}"
   build_from_archive SDL2 "sdl2-$SDL2_VERSION" "${SDL2_CONFIGURE_FLAGS[@]}"
   build_from_archive LIBINOTIFY "libinotify-$LIBINOTIFY_VERSION" "${LIBINOTIFY_CONFIGURE_FLAGS[@]}"
   install_moltenvk

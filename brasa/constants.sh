@@ -70,9 +70,13 @@ LIBINOTIFY_VERSION="20240724"
 MOLTENVK_VERSION="1.2.10"
 
 # ---------- Sources downloaded (empty SHA-256: deps.sh prints it and stops) ----------
-DOWNLOAD_NAMES=(NETTLE SDL2 LIBINOTIFY MOLTENVK)
+DOWNLOAD_NAMES=(NETTLE FREETYPE SDL2 LIBINOTIFY MOLTENVK)
 NETTLE_URL="https://ftp.gnu.org/gnu/nettle/nettle-$NETTLE_VERSION.tar.gz"
 NETTLE_SHA256="b4c518adb174e484cb4acea54118f02380c7133771e7e9beb98a0787194ee47c"
+# CodeWeavers' freetype is a git checkout (no generated configure, empty dlg submodule); its src/ and
+# include/ are identical to this signed release (checked with diff -rq, signature by Werner Lemberg).
+FREETYPE_URL="https://download-mirror.savannah.gnu.org/releases/freetype/freetype-$FREETYPE_VERSION.tar.xz"
+FREETYPE_SHA256="0550350666d427c74daeb85d5ac7bb353acba5f76956395995311a9c6f063289"
 SDL2_URL="https://github.com/libsdl-org/SDL/releases/download/release-$SDL2_VERSION/SDL2-$SDL2_VERSION.tar.gz"
 SDL2_SHA256="ac356ea55e8b9dd0b2d1fa27da40ef7e238267ccf9324704850d5d47375b48ea"
 LIBINOTIFY_URL="https://github.com/libinotify-kqueue/libinotify-kqueue/releases/download/$LIBINOTIFY_VERSION/libinotify-$LIBINOTIFY_VERSION.tar.gz"
@@ -86,8 +90,6 @@ MOLTENVK_DYLIB="libMoltenVK.dylib"
 # ---------- Sources from CodeWeavers ----------
 GMP_SOURCE_DIR="$CROSSOVER_SOURCES_DIR/gnutls/gmp"
 GNUTLS_SOURCE_DIR="$CROSSOVER_SOURCES_DIR/gnutls/gnutls"
-FREETYPE_SOURCE_DIR="$CROSSOVER_SOURCES_DIR/freetype"
-
 # ---------- Library flags ----------
 DEPS_COMMON_CONFIGURE_FLAGS=(
   "--host=$TARGET_HOST"
