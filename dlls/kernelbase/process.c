@@ -30,6 +30,7 @@
 #include "winternl.h"
 
 #include "kernelbase.h"
+#include "brasa_cmdline.h"
 #include "wine/debug.h"
 #include "wine/condrv.h"
 
@@ -566,6 +567,9 @@ BOOL WINAPI DECLSPEC_HOTPATCH CreateProcessInternalW( HANDLE token, const WCHAR 
             return FALSE;
         }
     }
+
+    /* Brasa: per-program extra command-line options (brasa_cmdline.c) */
+    tidy_cmdline = brasa_append_command_line( app_name, tidy_cmdline, cmd_line );
 
     /* Warn if unsupported features are used */
 

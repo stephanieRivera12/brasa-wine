@@ -10,8 +10,31 @@ https://www.codeweavers.com/crossover/source). The first commit imports it uncha
 
 ## What changes against CodeWeavers
 
-Nothing yet. Everything we add lives in `brasa/`; the diff against the first commit is exactly
-what Brasa adds.
+Brasa adds two things: the scripts and tests in `brasa/`, and the "per-program extra command-line
+options" patch in `dlls/kernelbase` (`brasa_cmdline.c`, `brasa_cmdline.h`, `brasa_constants.h`, one
+call in `process.c`, one line in `Makefile.in`). The diff against the first commit is exactly that.
+
+### Per-program command-line options
+
+Steam shows its login only if every `steamwebhelper.exe` starts with `--no-sandbox --in-process-gpu
+--disable-gpu`. `CreateProcessInternalW` appends options from the registry key
+`HKCU\Software\Brasa\AppendCommandLine`: one `REG_SZ` value per program, name = exe file name
+(matched case-insensitively, without the path), data = options, added after a space at the end of the
+line.
+
+```sh
+wine reg add 'HKCU\Software\Brasa\AppendCommandLine' /v steamwebhelper.exe /t REG_SZ \
+  /d '--no-sandbox --in-process-gpu --disable-gpu' /f
+```
+
+Ignored, with a `warn:brasa` line naming only the exe and the reason (never the data or the command
+line): a type other than `REG_SZ`, an empty value, more than 1024 characters, control characters
+(newline, embedded NUL, DEL), a result over 32 767 characters. The program starts anyway. The key
+lives in the private Wine prefix, so it grants nothing a program in that prefix could not already do.
+
+Tests: `brasa/tests/build-tests.sh && brasa/tests/run-tests.sh <engine root>` (spawns test programs
+in a throwaway prefix; prints `PASS|FAIL <case>`), and `brasa/tests/test-run-lib.sh` for the pure
+functions of the runner.
 
 ## Where each library comes from
 
