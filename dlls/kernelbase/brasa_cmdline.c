@@ -33,6 +33,7 @@ WINE_DECLARE_DEBUG_CHANNEL(brasa);
 enum options_status
 {
     OPTIONS_VALID,
+    OPTIONS_NOT_SET,        /* no value for this program: the normal case, not logged */
     OPTIONS_WRONG_TYPE,
     OPTIONS_EMPTY,
     OPTIONS_TOO_LONG,
@@ -41,11 +42,19 @@ enum options_status
     OPTIONS_RESULT_TOO_LONG,
 };
 
+struct registry_value
+{
+    DWORD type;
+    DWORD size;     /* bytes, terminator included */
+    WCHAR data[BRASA_MAX_OPTIONS_CHARS + 1];
+};
+
 static const char *options_status_text( enum options_status status )
 {
     switch (status)
     {
     case OPTIONS_VALID:           return "valid";
+    case OPTIONS_NOT_SET:         return "not set";
     case OPTIONS_WRONG_TYPE:      return "value is not REG_SZ";
     case OPTIONS_EMPTY:           return "value is empty";
     case OPTIONS_TOO_LONG:        return "value is too long";
@@ -70,20 +79,21 @@ static BOOL has_control_char( const WCHAR *text, SIZE_T length )
     return FALSE;
 }
 
-/* Pure: judges a value read from the registry. size is in bytes and includes the terminator;
- * cmdline_length is the length in characters of the line the options would be appended to. */
-static enum options_status validate_options( DWORD type, const WCHAR *data, DWORD size, SIZE_T cmdline_length )
+/* Pure: judges a value read from the registry. cmdline_length is the length in characters of the
+ * line the options would be appended to. The result, with its terminator, must fit in
+ * BRASA_MAX_CMDLINE_CHARS: longer, the system would cut the line silently. */
+static enum options_status validate_options( const struct registry_value *value, SIZE_T cmdline_length )
 {
     SIZE_T length;
 
-    if (type != REG_SZ) return OPTIONS_WRONG_TYPE;
-    if (size < sizeof(WCHAR) || size % sizeof(WCHAR)) return OPTIONS_EMBEDDED_NUL;
-    length = size / sizeof(WCHAR) - 1;
+    if (value->type != REG_SZ) return OPTIONS_WRONG_TYPE;
+    if (value->size < sizeof(WCHAR) || value->size % sizeof(WCHAR)) return OPTIONS_EMBEDDED_NUL;
+    length = value->size / sizeof(WCHAR) - 1;
     if (!length) return OPTIONS_EMPTY;
     if (length > BRASA_MAX_OPTIONS_CHARS) return OPTIONS_TOO_LONG;
-    if (data[length] || wcslen( data ) != length) return OPTIONS_EMBEDDED_NUL;
-    if (has_control_char( data, length )) return OPTIONS_CONTROL_CHAR;
-    if (cmdline_length + wcslen( BRASA_OPTIONS_SEPARATOR ) + length > BRASA_MAX_CMDLINE_CHARS)
+    if (value->data[length] || wcslen( value->data ) != length) return OPTIONS_EMBEDDED_NUL;
+    if (has_control_char( value->data, length )) return OPTIONS_CONTROL_CHAR;
+    if (cmdline_length + wcslen( BRASA_OPTIONS_SEPARATOR ) + length + 1 > BRASA_MAX_CMDLINE_CHARS)
         return OPTIONS_RESULT_TOO_LONG;
     return OPTIONS_VALID;
 }
@@ -98,19 +108,17 @@ static const WCHAR *program_name( const WCHAR *path )
     return name;
 }
 
-/* Reads the options of a program; returns the reason they are not usable (silently for
- * "no value" and unreadable keys: those are the normal "no options" case). */
-static enum options_status read_options( const WCHAR *name, WCHAR *buffer, DWORD *size, SIZE_T cmdline_length,
-                                         BOOL *found )
+/* Reads the value of a program. A missing value or an unreadable key is OPTIONS_NOT_SET. */
+static enum options_status read_options( const WCHAR *name, struct registry_value *value )
 {
-    DWORD type = REG_NONE;
-    LSTATUS ret = RegGetValueW( HKEY_CURRENT_USER, BRASA_APPEND_KEY, name, RRF_RT_ANY | RRF_NOEXPAND,
-                                &type, buffer, size );
+    LSTATUS ret;
 
-    *found = (ret == ERROR_SUCCESS || ret == ERROR_MORE_DATA);
+    value->type = REG_NONE;
+    value->size = sizeof(value->data);
+    ret = RegGetValueW( HKEY_CURRENT_USER, BRASA_APPEND_KEY, name, RRF_RT_ANY | RRF_NOEXPAND,
+                        &value->type, value->data, &value->size );
     if (ret == ERROR_MORE_DATA) return OPTIONS_TOO_LONG;
-    if (ret != ERROR_SUCCESS) return OPTIONS_VALID;
-    return validate_options( type, buffer, *size, cmdline_length );
+    return ret == ERROR_SUCCESS ? OPTIONS_VALID : OPTIONS_NOT_SET;
 }
 
 static WCHAR *join_options( const WCHAR *cmdline, const WCHAR *options )
@@ -128,26 +136,25 @@ static WCHAR *join_options( const WCHAR *cmdline, const WCHAR *options )
 
 WCHAR *brasa_append_command_line( const WCHAR *app_name, WCHAR *cmdline, const WCHAR *caller_cmdline )
 {
-    WCHAR options[BRASA_MAX_OPTIONS_CHARS + 1];
-    DWORD size = sizeof(options);
+    struct registry_value value;
     const WCHAR *name;
     enum options_status status;
-    BOOL found;
     WCHAR *line;
 
     if (!app_name || !cmdline) return cmdline;
     name = program_name( app_name );
     if (!*name) return cmdline;
 
-    status = read_options( name, options, &size, wcslen( cmdline ), &found );
+    status = read_options( name, &value );
+    if (status == OPTIONS_VALID) status = validate_options( &value, wcslen( cmdline ) );
+    if (status == OPTIONS_NOT_SET) return cmdline;
     if (status != OPTIONS_VALID)
     {
         WARN_(brasa)( "ignoring the options of %s: %s\n", debugstr_w(name), options_status_text( status ));
         return cmdline;
     }
-    if (!found) return cmdline;
 
-    if (!(line = join_options( cmdline, options ))) return cmdline;
+    if (!(line = join_options( cmdline, value.data ))) return cmdline;
     if (cmdline != caller_cmdline) RtlFreeHeap( GetProcessHeap(), 0, cmdline );
     return line;
 }

@@ -29,7 +29,7 @@ wine reg add 'HKCU\Software\Brasa\AppendCommandLine' /v steamwebhelper.exe /t RE
 
 Ignored, with a `warn:brasa` line naming only the exe and the reason (never the data or the command
 line): a type other than `REG_SZ`, an empty value, more than 1024 characters, control characters
-(newline, embedded NUL, DEL), a result over 32 767 characters. The program starts anyway. The key
+(newline, embedded NUL, DEL), a result of 32 767 characters or more (the system cuts the line at 32 766). The program starts anyway. The key
 lives in the private Wine prefix, so it grants nothing a program in that prefix could not already do.
 
 Tests: `brasa/tests/build-tests.sh && brasa/tests/run-tests.sh <engine root>` (spawns test programs
