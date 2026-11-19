@@ -114,7 +114,12 @@ FREETYPE_CONFIGURE_FLAGS=(
   --with-bzip2=yes --with-png=no --with-harfbuzz=no --with-brotli=no --with-zlib=no
 )
 SDL2_CONFIGURE_FLAGS=(--disable-static)
-LIBINOTIFY_CONFIGURE_FLAGS=(--disable-static)
+LIBINOTIFY_CONFIGURE_FLAGS=(
+  --disable-static
+  # The SDK has fdclosedir only from macOS 26.4; below our floor (14) libinotify must use its own
+  # compat/fdclosedir.c, as it did with older SDKs. The SDK still tags the call, hence the warning off.
+  "ac_cv_func_fdclosedir=no" "CFLAGS=-g -O2 -Wno-unguarded-availability-new"
+)
 
 # ---------- Runtime libraries (file names, as Wine opens them) ----------
 LIB_GMP="libgmp.10.dylib"
