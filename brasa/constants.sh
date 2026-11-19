@@ -26,7 +26,7 @@ BRASA_VISIBLE_RESULTS=(brasa-deps brasa-deps-src brasa-wine brasa-wine-stage)
 # ---------- Engine ----------
 ENGINE_PREFIX="/opt/wine-brasa"
 ENGINE_VERSION="26.3.0-1"
-ENGINE_OUTPUT="$STAGE_DIR$ENGINE_PREFIX"
+STAGE_ENGINE_DIR="$STAGE_DIR$ENGINE_PREFIX"   # what build.sh installs
 ENGINE_REQUIRED_PATHS=(
   bin/wine
   bin/wineserver
@@ -133,18 +133,23 @@ DEPS_LIBS=("$LIB_GMP" "$LIB_GNUTLS" "$LIB_FREETYPE" "$LIB_SDL2" "$LIB_INOTIFY" "
 RPATH_ID_PREFIX="@rpath/"
 # "library:dependency" pairs whose absolute dependency path becomes @rpath/<dependency>.
 DEPS_RELOCATIONS=("$LIB_GNUTLS:$LIB_GMP")
-ALLOWED_DEPENDENCY_PREFIXES=("@rpath/" "/usr/lib/" "/System/")
+ALLOWED_DEPENDENCY_PREFIXES=("@rpath/" "@loader_path/" "/usr/lib/" "/System/")
+ALLOWED_RPATH_PREFIXES=("@rpath" "@loader_path" "/usr/lib/" "/System/")
 # "build id:file" pairs copied from the source into the build dir before configure: libinotify's
 # Makefile passes "-export-symbols libinotify.sym" as a relative path, which breaks out-of-tree builds.
 OUT_OF_TREE_INPUTS=("libinotify-$LIBINOTIFY_VERSION:libinotify.sym")
 
 # ---------- Wine configure ----------
+SOURCE_PATH_MAP_FLAGS="-ffile-prefix-map=$FORK_SOURCE_DIR=/brasa-wine-src -ffile-prefix-map=$BUILD_DIR=/brasa-wine-build"
 WINE_CONFIGURE_FLAGS=(
   "--prefix=$ENGINE_PREFIX" --enable-archs=i386,x86_64
   --without-x --without-wayland --without-alsa --without-oss --without-pulse
   --without-cups --without-sane --without-v4l2 --without-udev --without-usb
   --without-gstreamer
   --with-freetype --with-gnutls --with-sdl --with-vulkan --with-inotify
+  # Wine's own assertions and critical-section names embed __FILE__; without this the PE dlls
+  # would carry the path of this Mac. -g -O2 is configure's default, kept as it is.
+  "CFLAGS=-g -O2 $SOURCE_PATH_MAP_FLAGS" "CROSSCFLAGS=-g -O2 $SOURCE_PATH_MAP_FLAGS"
 )
 # Short soname that Wine opens through the LC_RPATH of the .so that asks for it.
 WINE_SONAME_ASSIGNMENTS=(
@@ -159,9 +164,10 @@ ENGINE_BIN_BINARIES=(wine wineserver)
 OTOOL_TOOL="otool"
 STRIP_TOOL="strip"
 STRINGS_TOOL="strings"
+LIPO_TOOL="lipo"
 ENGINE_UNIX_LIBS_DIR="lib/wine/x86_64-unix"
 WINE_LDFLAGS_RPATHS="-Wl,-rpath,$RPATH_UNIX_LIBS -Wl,-rpath,$RPATH_BIN"
-FORBIDDEN_STRINGS=("/Users/" "$WORK_DIR" "$BUILD_DIR" "$BRASA_ROOT")
+FORBIDDEN_STRINGS=("/Users/" "/opt/homebrew" "$WORK_DIR" "$BUILD_DIR" "$DEPS_PREFIX" "$BRASA_ROOT")
 CONFIGURE_FATAL_WARNINGS=(
   "fonts won't be supported"
   "no schannel support"
@@ -178,3 +184,79 @@ EXIT_CONFIGURE_WARNING=5
 EXIT_BAD_DEPENDENCY=6
 EXIT_MISSING_OUTPUT=7
 EXIT_LEAK=8
+EXIT_CHECK_FAILED=9
+EXIT_MISSING_SOURCE=10
+
+# ---------- Package (spec 5.5) ----------
+ENGINES_VENDOR_DIR="$BRASA_ROOT/vendor/engines"
+ENGINE_OUTPUT="$ENGINES_VENDOR_DIR/wine-brasa-$ENGINE_VERSION"
+PACKAGE_WORK_DIR="$WORK_DIR/brasa-package"
+DOWNLOADS_DIR="$WORK_DIR/downloads"
+VERSION_FILE="VERSION"
+LICENSES_DIR="licenses"
+LICENSES_README_SOURCE="$BRASA_FORK_DIR/brasa/licenses/README.md"
+# Not Wine's: the DXMT spike left these in the stage; make-app.sh adds DXMT itself (spec 5.7).
+NOT_WINE_FILES=(winemetal.so winemetal.dll)
+ENGINE_FILE_MODE_STRIP="go-w"
+
+# wine-mono and wine-gecko, unpacked as CrossOver does. Empty SHA-256: package.sh prints it and stops.
+MONO_VERSION="10.4.1"
+GECKO_VERSION="2.47.4"
+ADDON_NAMES=(MONO GECKO_X86 GECKO_X86_64)
+ADDONS_BASE_URL="https://dl.winehq.org/wine"
+MONO_URL="$ADDONS_BASE_URL/wine-mono/$MONO_VERSION/wine-mono-$MONO_VERSION-x86.tar.xz"
+MONO_SHA256=""
+MONO_DEST="share/wine/mono"
+GECKO_X86_URL="$ADDONS_BASE_URL/wine-gecko/$GECKO_VERSION/wine-gecko-$GECKO_VERSION-x86.tar.xz"
+GECKO_X86_SHA256=""
+GECKO_X86_DEST="share/wine/gecko"
+GECKO_X86_64_URL="$ADDONS_BASE_URL/wine-gecko/$GECKO_VERSION/wine-gecko-$GECKO_VERSION-x86_64.tar.xz"
+GECKO_X86_64_SHA256=""
+GECKO_X86_64_DEST="share/wine/gecko"
+ADDON_FOLDERS=(
+  "$MONO_DEST/wine-mono-$MONO_VERSION"
+  "$GECKO_X86_DEST/wine-gecko-$GECKO_VERSION-x86"
+  "$GECKO_X86_64_DEST/wine-gecko-$GECKO_VERSION-x86_64"
+)
+# Licence files looked for in the unpacked mono and gecko folders.
+ADDON_LICENSE_PATTERNS=('LICENSE*' 'COPYING*' 'license*')
+ADDON_LICENSE_COMPONENTS=("mono:$MONO_DEST/wine-mono-$MONO_VERSION"
+  "gecko:$GECKO_X86_64_DEST/wine-gecko-$GECKO_VERSION-x86_64")
+
+# ---------- Licences (one folder per component under licenses/) ----------
+LICENSE_COMPONENTS=(wine gmp nettle gnutls libtasn1 libunistring freetype moltenvk sdl2 libinotify dxmt dxvk mono gecko)
+GNUTLS_REAL_DIR="$CROSSOVER_SOURCES_REAL_DIR/gnutls"
+DXMT_LICENSE_SOURCE="$ENGINES_VENDOR_DIR/dxmt-v0.80/LICENSE"
+DXVK_LICENSE_SOURCE="$ENGINES_VENDOR_DIR/dxvk-1.10.3/LICENSE"
+# "component|file": copied into licenses/<component>/.
+LICENSE_FILES=(
+  "wine|$BRASA_FORK_DIR/COPYING.LIB"
+  "gmp|$GNUTLS_REAL_DIR/gmp/COPYING"
+  "gmp|$GNUTLS_REAL_DIR/gmp/COPYINGv2"
+  "gmp|$GNUTLS_REAL_DIR/gmp/COPYINGv3"
+  "gmp|$GNUTLS_REAL_DIR/gmp/COPYING.LESSERv3"
+  "gnutls|$GNUTLS_REAL_DIR/gnutls/LICENSE"
+  "gnutls|$GNUTLS_REAL_DIR/gnutls/doc/COPYING"
+  "gnutls|$GNUTLS_REAL_DIR/gnutls/doc/COPYING.LESSER"
+  "libtasn1|$GNUTLS_REAL_DIR/gnutls/doc/COPYING.LESSER"
+  "libtasn1|$GNUTLS_REAL_DIR/gnutls/lib/minitasn1/libtasn1.h"
+  "libunistring|$GNUTLS_REAL_DIR/gmp/COPYING.LESSERv3"
+  "libunistring|$GNUTLS_REAL_DIR/gmp/COPYINGv2"
+  "dxmt|$DXMT_LICENSE_SOURCE"
+  "dxvk|$DXVK_LICENSE_SOURCE"
+)
+# "component|tarball|member|file name inside licenses/<component>/"
+LICENSE_TAR_MEMBERS=(
+  "nettle|nettle-$NETTLE_VERSION.tar.gz|nettle-$NETTLE_VERSION/COPYING.LESSERv3|COPYING.LESSERv3"
+  "nettle|nettle-$NETTLE_VERSION.tar.gz|nettle-$NETTLE_VERSION/COPYINGv2|COPYINGv2"
+  "nettle|nettle-$NETTLE_VERSION.tar.gz|nettle-$NETTLE_VERSION/COPYINGv3|COPYINGv3"
+  "freetype|freetype-$FREETYPE_VERSION.tar.xz|freetype-$FREETYPE_VERSION/docs/FTL.TXT|FTL.TXT"
+  "freetype|freetype-$FREETYPE_VERSION.tar.xz|freetype-$FREETYPE_VERSION/docs/GPLv2.TXT|GPLv2.TXT"
+  "sdl2|SDL2-$SDL2_VERSION.tar.gz|SDL2-$SDL2_VERSION/LICENSE.txt|LICENSE.txt"
+  "libinotify|libinotify-$LIBINOTIFY_VERSION.tar.gz|libinotify-$LIBINOTIFY_VERSION/LICENSE|LICENSE"
+  "moltenvk|MoltenVK-macos.tar|MoltenVK/LICENSE|LICENSE"
+)
+CHECK_PROBLEMS_SHOWN=20
+
+# ---------- Stripping (PE dlls need the mingw tool of their architecture) ----------
+PE_STRIP_TOOLS=("lib/wine/i386-windows:i686-w64-mingw32-strip" "lib/wine/x86_64-windows:x86_64-w64-mingw32-strip")

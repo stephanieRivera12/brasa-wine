@@ -75,19 +75,19 @@ install_wine() {
 link_deps_into_stage() {
   local lib
   for lib in "${DEPS_LIBS[@]}" "$LIB_FREETYPE_LINK"; do
-    ln -sfn "$DEPS_PREFIX/lib/$lib" "$ENGINE_OUTPUT/lib/$lib"
+    ln -sfn "$DEPS_PREFIX/lib/$lib" "$STAGE_ENGINE_DIR/lib/$lib"
   done
 }
 
 verify_output() {
   local missing
-  missing="$(missing_paths "$ENGINE_OUTPUT" "${ENGINE_REQUIRED_PATHS[@]}")"
-  [[ -z "$missing" ]] || { printf 'Missing in %s:\n%s\n' "$ENGINE_OUTPUT" "$missing" >&2; exit "$EXIT_MISSING_OUTPUT"; }
+  missing="$(missing_paths "$STAGE_ENGINE_DIR" "${ENGINE_REQUIRED_PATHS[@]}")"
+  [[ -z "$missing" ]] || { printf 'Missing in %s:\n%s\n' "$STAGE_ENGINE_DIR" "$missing" >&2; exit "$EXIT_MISSING_OUTPUT"; }
 }
 
 verify_no_leaks() {
   local entry leaks="" entries
-  entries="$(engine_binaries_with_rpath "$ENGINE_OUTPUT")" || exit "$EXIT_MISSING_OUTPUT"
+  entries="$(engine_binaries_with_rpath "$STAGE_ENGINE_DIR")" || exit "$EXIT_MISSING_OUTPUT"
   while IFS= read -r entry; do
     leaks+="$(leaks_in "${entry%%:*}" "${entry#*:}")"$'\n'
   done <<< "$entries"
@@ -104,7 +104,7 @@ main() {
   link_deps_into_stage
   verify_output
   verify_no_leaks
-  say "Engine ready in $ENGINE_OUTPUT"
+  say "Engine ready in $STAGE_ENGINE_DIR"
 }
 
 main "$@"

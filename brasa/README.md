@@ -69,3 +69,20 @@ brasa/tests/test-lib.sh   # tests of the pure functions of the scripts
   support. The engine lands in `build/brasa-wine-stage/opt/wine-brasa/`.
 - Libraries are skipped when already built (marks in `brasa-deps/.stamps`). To change the
   `configure` flags of Wine, delete `~/.brasa-engine-work/brasa-wine` first.
+
+## Packaging
+
+`brasa/package.sh` turns the stage into `vendor/engines/wine-brasa-26.3.0-1/` (spec 5.5): real
+copies of the libraries (never links into the work folder), wine-mono and wine-gecko unpacked in
+`share/wine/`, licences in `licenses/`, debug info stripped (Mach-O with `strip -S`, PE dlls with
+the mingw `strip`), a `VERSION` file, and no write permission for group or others. The DXMT files
+that the spike left in the stage (`winemetal.*`) are left out: the app adds DXMT itself. The first
+run stops with exit 3 and prints the SHA-256 of the three mono/gecko archives, to be checked and
+pinned in `constants.sh`; it then checks the result with `brasa/check-engine.sh` before moving it.
+
+`brasa/check-engine.sh <engine>` exits 0 only if every Mach-O is x86_64 and links only to
+`@rpath`, `@loader_path`, `/usr/lib` and `/System`, no file holds a personal or build path, the
+short sonames exist, mono/gecko and the licences are present, nothing is writable by others and no
+link leaves the engine. Tests: `brasa/tests/test-engine-checks.sh`, `brasa/tests/test-package.sh`.
+
+Size of the packaged engine: to be filled in after the first `package.sh` run (`du -sh`).
