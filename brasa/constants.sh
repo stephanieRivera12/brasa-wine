@@ -134,6 +134,9 @@ RPATH_ID_PREFIX="@rpath/"
 # "library:dependency" pairs whose absolute dependency path becomes @rpath/<dependency>.
 DEPS_RELOCATIONS=("$LIB_GNUTLS:$LIB_GMP")
 ALLOWED_DEPENDENCY_PREFIXES=("@rpath/" "/usr/lib/" "/System/")
+# "build id:file" pairs copied from the source into the build dir before configure: libinotify's
+# Makefile passes "-export-symbols libinotify.sym" as a relative path, which breaks out-of-tree builds.
+OUT_OF_TREE_INPUTS=("libinotify-$LIBINOTIFY_VERSION:libinotify.sym")
 
 # ---------- Wine configure ----------
 WINE_CONFIGURE_FLAGS=(

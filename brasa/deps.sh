@@ -51,6 +51,15 @@ unpack() {
   printf '%s' "$dir"
 }
 
+# Copies into <build_dir> the source files that <id>'s Makefile expects next to it (OUT_OF_TREE_INPUTS).
+copy_out_of_tree_inputs() {
+  local id="$1" source_dir="$2" build_dir="$3" pair
+  for pair in "${OUT_OF_TREE_INPUTS[@]}"; do
+    [[ "${pair%%:*}" == "$id" ]] && cp "$source_dir/${pair##*:}" "$build_dir/"
+  done
+  return 0
+}
+
 # Builds <id> out of tree from <source_dir>/configure; the rest of the arguments are its flags.
 build_autotools() {
   local id="$1" source_dir="$2" dir="$DEPS_BUILD_DIR/$1"
@@ -62,6 +71,7 @@ build_autotools() {
   say "Building $id"
   rm -rf -- "${dir:?}"
   mkdir -p "$dir"
+  copy_out_of_tree_inputs "$id" "$source_dir" "$dir"
   (
     cd "$dir"
     run_x86 "$source_dir/configure" "${DEPS_COMMON_CONFIGURE_FLAGS[@]}" "$@"
