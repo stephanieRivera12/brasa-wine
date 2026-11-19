@@ -49,8 +49,18 @@ configure_wine() {
   )
 }
 
+# Build tools such as tools/sfnt2fon/sfnt2fon run during make and load @rpath/libfreetype.6.dylib
+# through @loader_path/../.., which is BUILD_DIR itself; links there let them find the libraries.
+link_deps_for_build_tools() {
+  local lib
+  for lib in "${DEPS_LIBS[@]}"; do
+    ln -sfn "$DEPS_PREFIX/lib/$lib" "$BUILD_DIR/$lib"
+  done
+}
+
 compile_wine() {
   say "Compiling Wine"
+  link_deps_for_build_tools
   (cd "$BUILD_DIR" && run_x86 make -j"$(sysctl -n hw.ncpu)")
 }
 
