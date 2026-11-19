@@ -226,8 +226,9 @@ ADDON_LICENSE_COMPONENTS=("mono:$MONO_DEST/wine-mono-$MONO_VERSION"
 # ---------- Licences (one folder per component under licenses/) ----------
 LICENSE_COMPONENTS=(wine gmp nettle gnutls libtasn1 libunistring freetype moltenvk sdl2 libinotify dxmt dxvk mono gecko)
 GNUTLS_REAL_DIR="$CROSSOVER_SOURCES_REAL_DIR/gnutls"
-DXMT_LICENSE_SOURCE="$ENGINES_VENDOR_DIR/dxmt-v0.80/LICENSE"
-DXVK_LICENSE_SOURCE="$ENGINES_VENDOR_DIR/dxvk-1.10.3/LICENSE"
+# Not inside the DXMT/DXVK release tarballs; texts fetched from the upstream tags (3Shain/dxmt v0.80, Gcenx/DXVK-macOS v1.10.3-20230507-repack).
+DXMT_LICENSE_SOURCE="$BRASA_FORK_DIR/brasa/licenses/third-party/dxmt/LICENSE"
+DXVK_LICENSE_SOURCE="$BRASA_FORK_DIR/brasa/licenses/third-party/dxvk/LICENSE"
 # "component|file": copied into licenses/<component>/.
 LICENSE_FILES=(
   "wine|$BRASA_FORK_DIR/COPYING.LIB"
