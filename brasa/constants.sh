@@ -40,7 +40,20 @@ BREW="/opt/homebrew/bin/brew"
 BREW_PACKAGES=(mingw-w64 bison pkgconf)
 BREW_PREFIX="/opt/homebrew"
 BISON_BIN_DIR="$BREW_PREFIX/opt/bison/bin"
-TOOLS_PATH="$BISON_BIN_DIR:$BREW_PREFIX/bin"   # tools only, never libraries
+# Tools only, never libraries: /opt/homebrew/bin has freetype-config, which configure runs before
+# pkg-config. Wine sees just this folder of links plus the system folders.
+TOOLS_BIN_DIR="$WORK_DIR/tools"
+TOOLS_PATH="$TOOLS_BIN_DIR"
+SYSTEM_PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+TOOL_SOURCES=(
+  "$BISON_BIN_DIR/bison"
+  "$BREW_PREFIX/bin/pkg-config"
+  "$BREW_PREFIX/bin/pkgconf"
+  "$BREW_PREFIX/bin/x86_64-w64-mingw32-*"
+  "$BREW_PREFIX/bin/i686-w64-mingw32-*"
+)
+# Host variables that add library paths on top of PKG_CONFIG_LIBDIR and the flags.
+LEAKY_ENV_VARS=(PKG_CONFIG_PATH CPATH LIBRARY_PATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH)
 TARGET_ARCH="x86_64"
 TARGET_HOST="x86_64-apple-darwin"
 DEPLOYMENT_TARGET="14.0"
@@ -59,15 +72,15 @@ MOLTENVK_VERSION="1.2.10"
 # ---------- Sources downloaded (empty SHA-256: deps.sh prints it and stops) ----------
 DOWNLOAD_NAMES=(NETTLE SDL2 LIBINOTIFY MOLTENVK)
 NETTLE_URL="https://ftp.gnu.org/gnu/nettle/nettle-$NETTLE_VERSION.tar.gz"
-NETTLE_SHA256=""
+NETTLE_SHA256="b4c518adb174e484cb4acea54118f02380c7133771e7e9beb98a0787194ee47c"
 SDL2_URL="https://github.com/libsdl-org/SDL/releases/download/release-$SDL2_VERSION/SDL2-$SDL2_VERSION.tar.gz"
-SDL2_SHA256=""
+SDL2_SHA256="ac356ea55e8b9dd0b2d1fa27da40ef7e238267ccf9324704850d5d47375b48ea"
 LIBINOTIFY_URL="https://github.com/libinotify-kqueue/libinotify-kqueue/releases/download/$LIBINOTIFY_VERSION/libinotify-$LIBINOTIFY_VERSION.tar.gz"
-LIBINOTIFY_SHA256=""
+LIBINOTIFY_SHA256="5cc3fb7af407b17b7daa871cc98bb882716c4b5c296fadfb66bfe86c37cc599c"
 # v1.2.10 has no release of its own; its binaries hang on v1.2.10-rc2, which is the same commit (edbdcf0).
 MOLTENVK_RELEASE_TAG="v$MOLTENVK_VERSION-rc2"
 MOLTENVK_URL="https://github.com/KhronosGroup/MoltenVK/releases/download/$MOLTENVK_RELEASE_TAG/MoltenVK-macos.tar"
-MOLTENVK_SHA256=""
+MOLTENVK_SHA256="64527dc74ea037182de4923095506ecbc66599a9124b4af99de01238c56c3ed1"
 MOLTENVK_DYLIB="libMoltenVK.dylib"
 
 # ---------- Sources from CodeWeavers ----------
@@ -128,13 +141,21 @@ WINE_SONAME_ASSIGNMENTS=(
   "ac_cv_lib_soname_MoltenVK=$LIB_MOLTENVK"
   "ac_cv_lib_soname_SDL2=$LIB_SDL2"
 )
-WINE_LDFLAGS_RPATHS="-Wl,-rpath,@loader_path/../.. -Wl,-rpath,@loader_path/../lib"
+RPATH_UNIX_LIBS="@loader_path/../.."   # lib/wine/x86_64-unix -> lib
+RPATH_BIN="@loader_path/../lib"        # bin -> lib
+ENGINE_BIN_BINARIES=(wine wineserver)
+OTOOL_TOOL="otool"
+STRIP_TOOL="strip"
+STRINGS_TOOL="strings"
+ENGINE_UNIX_LIBS_DIR="lib/wine/x86_64-unix"
+WINE_LDFLAGS_RPATHS="-Wl,-rpath,$RPATH_UNIX_LIBS -Wl,-rpath,$RPATH_BIN"
+FORBIDDEN_STRINGS=("/Users/" "$WORK_DIR" "$BUILD_DIR" "$BRASA_ROOT")
 CONFIGURE_FATAL_WARNINGS=(
   "fonts won't be supported"
   "no schannel support"
   "Vulkan won't be supported"
   "filesystem change notifications won't be supported"
-  "MinGW compiler not found"
+  "PE cross-compiler not found"
 )
 CONFIGURE_LOG_NAME="configure.log"
 
@@ -144,3 +165,4 @@ EXIT_HASH_MISMATCH=4
 EXIT_CONFIGURE_WARNING=5
 EXIT_BAD_DEPENDENCY=6
 EXIT_MISSING_OUTPUT=7
+EXIT_LEAK=8

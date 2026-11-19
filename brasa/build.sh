@@ -12,9 +12,18 @@ source "$BRASA_DIR/lib.sh"
 CONFIGURE_LOG="$BUILD_DIR/$CONFIGURE_LOG_NAME"
 
 # Runs a command as x86_64 with the Wine environment. Only the tools come from Homebrew.
+unset_flags() {
+  local name
+  for name in "${LEAKY_ENV_VARS[@]}"; do
+    printf -- '-u\n%s\n' "$name"
+  done
+}
+
 run_x86() {
-  arch -x86_64 env \
-    "PATH=$TOOLS_PATH:$PATH" \
+  local flags=()
+  while IFS= read -r line; do flags+=("$line"); done < <(unset_flags)
+  arch -x86_64 env "${flags[@]}" \
+    "PATH=$TOOLS_PATH:$SYSTEM_PATH" \
     "CC=$TARGET_CC" "CXX=$TARGET_CXX" \
     "MACOSX_DEPLOYMENT_TARGET=$DEPLOYMENT_TARGET" \
     "PKG_CONFIG_LIBDIR=$DEPS_PREFIX/lib/pkgconfig" \
@@ -57,6 +66,15 @@ verify_output() {
   [[ -z "$missing" ]] || { printf 'Missing in %s:\n%s\n' "$ENGINE_OUTPUT" "$missing" >&2; exit "$EXIT_MISSING_OUTPUT"; }
 }
 
+verify_no_leaks() {
+  local entry leaks="" entries
+  entries="$(engine_binaries_with_rpath "$ENGINE_OUTPUT")" || exit "$EXIT_MISSING_OUTPUT"
+  while IFS= read -r entry; do
+    leaks+="$(leaks_in "${entry%%:*}" "${entry#*:}")"$'\n'
+  done <<< "$entries"
+  [[ -z "${leaks//$'\n'/}" ]] || { printf '%s\n' "$leaks" >&2; exit "$EXIT_LEAK"; }
+}
+
 main() {
   prepare_workspace
   require_deps
@@ -65,6 +83,7 @@ main() {
   compile_wine
   install_wine
   verify_output
+  verify_no_leaks
   say "Engine ready in $ENGINE_OUTPUT"
 }
 
