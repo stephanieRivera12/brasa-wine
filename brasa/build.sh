@@ -70,6 +70,15 @@ install_wine() {
   (cd "$BUILD_DIR" && run_x86 make install-lib DESTDIR="$STAGE_DIR")
 }
 
+# Links the libraries into the stage's lib/, where the rpaths look, so the stage runs for the
+# Task 1–2 tests. package.sh (Task 3) replaces them with real copies.
+link_deps_into_stage() {
+  local lib
+  for lib in "${DEPS_LIBS[@]}" "$LIB_FREETYPE_LINK"; do
+    ln -sfn "$DEPS_PREFIX/lib/$lib" "$ENGINE_OUTPUT/lib/$lib"
+  done
+}
+
 verify_output() {
   local missing
   missing="$(missing_paths "$ENGINE_OUTPUT" "${ENGINE_REQUIRED_PATHS[@]}")"
@@ -92,6 +101,7 @@ main() {
   check_configure_log "$CONFIGURE_LOG" || exit "$?"
   compile_wine
   install_wine
+  link_deps_into_stage
   verify_output
   verify_no_leaks
   say "Engine ready in $ENGINE_OUTPUT"
