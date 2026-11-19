@@ -84,8 +84,13 @@ install_licenses "$PKG"
 check "a file licence is copied under its component" "wine" "$(cat "$PKG/licenses/wine/COPYING.LIB")"
 check "a tarball member is extracted under its component" "inner" "$(cat "$PKG/licenses/pkg/LICENSE")"
 check "the README is copied" "where the source is" "$(cat "$PKG/licenses/README.md")"
-check "mono's licence is copied from the unpacked folder" "MIT" "$(cat "$PKG/licenses/mono/LICENSE")"
-check "gecko's licence is copied from the unpacked folder" "MPL" "$(cat "$PKG/licenses/gecko/LICENSE")"
+
+# the real licence sources of the fork exist, including mono and gecko
+LICENSE_FILES=("mono|$MONO_LICENSE_SOURCE" "gecko|$GECKO_LICENSE_SOURCE" "gecko|$GECKO_LICENSE_HTML_SOURCE")
+check "the committed mono and gecko licences exist" "" "$(missing_license_sources)"
+install_licenses "$PKG"
+check "mono's COPYING is installed" 1 "$([[ -s "$PKG/licenses/mono/COPYING" ]] && echo 1 || echo 0)"
+check "gecko's LICENSE and license.html are installed" 2 "$(ls "$PKG/licenses/gecko" | wc -l | tr -d ' ')"
 
 # version and permissions
 write_version "$PKG" "abc123"

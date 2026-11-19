@@ -116,4 +116,16 @@ for lib in "${DEPS_LIBS[@]}"; do : > "$SONAME_ENGINE/lib/$lib"; done
 ln -s "$LIB_FREETYPE" "$SONAME_ENGINE/lib/$LIB_FREETYPE_LINK"
 check "all sonames present" "" "$(check_sonames "$SONAME_ENGINE")"
 
+# The scan must not leak file descriptors: 3000 files under a low descriptor limit
+MANY="$SCRATCH/many"; mkdir -p "$MANY"
+for i in $(seq 1 3000); do printf 'clean %s\n' "$i" > "$MANY/f$i.txt"; done
+printf '/Users/me/leak\n' > "$MANY/f3000.txt"
+MANY_OUTPUT="$( (ulimit -n 64; check_personal_paths "$MANY") 2>&1 || true)"
+check "a 3000-file scan under a low fd limit finds only the leak" 1 "$(count_lines "$MANY_OUTPUT")"
+check "the leak is the one reported" 1 "$(grep -c "f3000.txt: contains a personal" <<< "$MANY_OUTPUT" || true)"
+check "an unreadable file is a problem, not a pass" 1 "$(chmod 000 "$MANY/f1.txt"; check_personal_paths "$MANY" 2>/dev/null | grep -c "f1.txt" || true)"
+chmod 644 "$MANY/f1.txt"
+RPATH_LOOP_OUTPUT="$( (ulimit -n 64; for _ in $(seq 1 1500); do disallowed_rpaths "$RPATH_OK"; done) 2>&1 || true)"
+check "1500 rpath inspections under a low fd limit leave no error" "" "$RPATH_LOOP_OUTPUT"
+
 finish_checks

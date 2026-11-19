@@ -96,21 +96,8 @@ extract_license_member() {
   tar -xOf "$DEPS_SRC_DIR/$tarball" "$member" > "$dest/$component/$name"
 }
 
-# Copies the licence files found at the top of an unpacked addon folder.
-copy_addon_licenses() {
-  local pkg="$1" dest="$2" entry component folder pattern file
-  for entry in "${ADDON_LICENSE_COMPONENTS[@]}"; do
-    component="${entry%%:*}"; folder="$pkg/${entry#*:}"
-    for pattern in "${ADDON_LICENSE_PATTERNS[@]}"; do
-      while IFS= read -r file; do
-        copy_license_file "$dest" "$component" "$file"
-      done < <(find "$folder" -maxdepth 1 -type f -name "$pattern")
-    done
-  done
-}
-
 install_licenses() {
-  local pkg="$1" dest="$1/$LICENSES_DIR" entry
+  local dest="$1/$LICENSES_DIR" entry
   mkdir -p "$dest"
   for entry in "${LICENSE_FILES[@]}"; do
     copy_license_file "$dest" "${entry%%|*}" "${entry#*|}"
@@ -118,7 +105,6 @@ install_licenses() {
   for entry in "${LICENSE_TAR_MEMBERS[@]}"; do
     extract_license_member "$dest" "$entry"
   done
-  copy_addon_licenses "$pkg" "$dest"
   cp "$LICENSES_README_SOURCE" "$dest/README.md"
 }
 

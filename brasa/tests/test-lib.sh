@@ -137,4 +137,9 @@ check "leaks_in on a missing file reports it" 1 "$(OTOOL_TOOL=false leaks_in "$S
 check "leaks_in reports a build path" 1 "$(leaks_in "$DIRTY_BINARY" "@loader_path/../.." | grep -c "contains a build path")"
 check "leaks_in sees no build path in a clean binary" 0 "$(leaks_in "$CLEAN_BINARY" "@loader_path/../.." | grep -c "contains a build path")"
 
+# library builds must not record the paths of this Mac
+check "deps compiler maps the source links" 1 "$(grep -cF -- "-ffile-prefix-map=$SOURCE_LINKS_DIR=" <<< "$DEPS_CC")"
+check "deps compiler maps the unpack dir" 1 "$(grep -cF -- "-ffile-prefix-map=$DEPS_BUILD_DIR=" <<< "$DEPS_CC")"
+check "deps compiler keeps the target arch" 1 "$(grep -cF -- "$TARGET_CC" <<< "$DEPS_CC")"
+
 finish_checks

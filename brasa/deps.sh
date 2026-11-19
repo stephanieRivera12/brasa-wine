@@ -13,7 +13,7 @@ source "$BRASA_DIR/lib.sh"
 run_x86() {
   arch -x86_64 env \
     "PATH=$TOOLS_PATH:$PATH" \
-    "CC=$TARGET_CC" "CXX=$TARGET_CXX" \
+    "CC=$DEPS_CC" "CXX=$TARGET_CXX" \
     "MACOSX_DEPLOYMENT_TARGET=$DEPLOYMENT_TARGET" \
     "PKG_CONFIG_LIBDIR=$DEPS_PREFIX/lib/pkgconfig" \
     "CPPFLAGS=-I$DEPS_PREFIX/include" "LDFLAGS=-L$DEPS_PREFIX/lib" \

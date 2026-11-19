@@ -17,7 +17,7 @@ disallowed_rpaths() {
       [[ "$path" == "$prefix"* ]] && allowed=1
     done
     ((allowed)) || printf '%s\n' "$path"
-  done < <(rpaths_of "$1")
+  done <<< "$(rpaths_of "$1")"
 }
 
 # Problems of a Mach-O from the text of `otool -L`, `otool -l` and `lipo -archs`.
@@ -49,30 +49,37 @@ is_macho_magic() {
   return 1
 }
 
+# 0 for a Mach-O, 1 for anything else, 2 when the file cannot be read.
 is_macho() {
-  is_macho_magic "$(head -c 4 "$1" | od -An -tx1 | tr -d ' \n')"
+  local magic
+  magic="$(od -An -tx1 -N4 "$1")" || return "$STATUS_UNREADABLE"
+  is_macho_magic "${magic// /}"
 }
 
-# Prints every Mach-O file under root.
+# Prints every file under root that is a Mach-O or cannot be read (so it fails inspection).
 macho_files() {
-  local file
+  local file status
   while IFS= read -r file; do
-    is_macho "$file" && printf '%s\n' "$file"
+    status=0
+    is_macho "$file" || status=$?
+    ((status == 1)) || printf '%s\n' "$file"
   done < <(find "$1" -type f)
   return 0
 }
 
 # One line per forbidden string inside the file, as it will ship (Mach-O without debug info).
 personal_path_problems() {
-  local file="$1" text hit
-  if is_macho "$file"; then
-    text="$(shipped_strings "$file")" || { printf '%s: could not read its strings\n' "$file"; return 0; }
-  else
-    text="$("$STRINGS_TOOL" -a "$file")" || { printf '%s: could not read its strings\n' "$file"; return 0; }
-  fi
+  local file="$1" text hit status=0
+  is_macho "$file" || status=$?
+  case "$status" in
+    0) text="$(shipped_strings "$file")" || status=$STATUS_UNREADABLE ;;
+    1) text="$("$STRINGS_TOOL" -a "$file")" || status=$STATUS_UNREADABLE ;;
+  esac
+  ((status == 0 || status == 1)) || { printf '%s: could not be scanned\n' "$file"; return 0; }
+  # A here-string, not a process substitution: bash 3.2 leaks a descriptor per <( ) in a loop.
   while IFS= read -r hit; do
     [[ -n "$hit" ]] && printf '%s: contains a personal or build path: %s\n' "$file" "$hit"
-  done < <(forbidden_strings_in "$text")
+  done <<< "$(forbidden_strings_in "$text")"
   return 0
 }
 

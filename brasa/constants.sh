@@ -91,6 +91,10 @@ MOLTENVK_DYLIB="libMoltenVK.dylib"
 GMP_SOURCE_DIR="$CROSSOVER_SOURCES_DIR/gnutls/gmp"
 GNUTLS_SOURCE_DIR="$CROSSOVER_SOURCES_DIR/gnutls/gnutls"
 # ---------- Library flags ----------
+# Libraries embed __FILE__ (gnutls, SDL2, ...): the compiler maps this Mac's build folders to neutral
+# ones. Passed in CC, so a library that sets its own CFLAGS (libinotify) keeps the map.
+DEPS_PATH_MAP_FLAGS="-ffile-prefix-map=$SOURCE_LINKS_DIR=/brasa-src -ffile-prefix-map=$DEPS_BUILD_DIR=/brasa-deps-build"
+DEPS_CC="$TARGET_CC $DEPS_PATH_MAP_FLAGS"
 DEPS_COMMON_CONFIGURE_FLAGS=(
   "--host=$TARGET_HOST"
   "--prefix=$DEPS_PREFIX"
@@ -218,17 +222,15 @@ ADDON_FOLDERS=(
   "$GECKO_X86_DEST/wine-gecko-$GECKO_VERSION-x86"
   "$GECKO_X86_64_DEST/wine-gecko-$GECKO_VERSION-x86_64"
 )
-# Licence files looked for in the unpacked mono and gecko folders.
-ADDON_LICENSE_PATTERNS=('LICENSE*' 'COPYING*' 'license*')
-ADDON_LICENSE_COMPONENTS=("mono:$MONO_DEST/wine-mono-$MONO_VERSION"
-  "gecko:$GECKO_X86_64_DEST/wine-gecko-$GECKO_VERSION-x86_64")
-
 # ---------- Licences (one folder per component under licenses/) ----------
 LICENSE_COMPONENTS=(wine gmp nettle gnutls libtasn1 libunistring freetype moltenvk sdl2 libinotify dxmt dxvk mono gecko)
 GNUTLS_REAL_DIR="$CROSSOVER_SOURCES_REAL_DIR/gnutls"
 # Not inside the DXMT/DXVK release tarballs; texts fetched from the upstream tags (3Shain/dxmt v0.80, Gcenx/DXVK-macOS v1.10.3-20230507-repack).
 DXMT_LICENSE_SOURCE="$BRASA_FORK_DIR/brasa/licenses/third-party/dxmt/LICENSE"
 DXVK_LICENSE_SOURCE="$BRASA_FORK_DIR/brasa/licenses/third-party/dxvk/LICENSE"
+MONO_LICENSE_SOURCE="$BRASA_FORK_DIR/brasa/licenses/third-party/mono/COPYING"
+GECKO_LICENSE_SOURCE="$BRASA_FORK_DIR/brasa/licenses/third-party/gecko/LICENSE"
+GECKO_LICENSE_HTML_SOURCE="$BRASA_FORK_DIR/brasa/licenses/third-party/gecko/license.html"
 # "component|file": copied into licenses/<component>/.
 LICENSE_FILES=(
   "wine|$BRASA_FORK_DIR/COPYING.LIB"
@@ -245,6 +247,9 @@ LICENSE_FILES=(
   "libunistring|$GNUTLS_REAL_DIR/gmp/COPYINGv2"
   "dxmt|$DXMT_LICENSE_SOURCE"
   "dxvk|$DXVK_LICENSE_SOURCE"
+  "mono|$MONO_LICENSE_SOURCE"
+  "gecko|$GECKO_LICENSE_SOURCE"
+  "gecko|$GECKO_LICENSE_HTML_SOURCE"
 )
 # "component|tarball|member|file name inside licenses/<component>/"
 LICENSE_TAR_MEMBERS=(
@@ -265,3 +270,4 @@ PE_STRIP_TOOLS=("lib/wine/i386-windows:i686-w64-mingw32-strip" "lib/wine/x86_64-
 # ---------- Package safety ----------
 PREVIOUS_ENGINE_SUFFIX=".previous"
 MACHO_MAGICS=(feedface cefaedfe feedfacf cffaedfe cafebabe cafebabf)
+STATUS_UNREADABLE=2

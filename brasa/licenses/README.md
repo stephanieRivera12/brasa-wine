@@ -37,8 +37,8 @@ rebuild it:
 | `libinotify` | libinotify-kqueue 20240724 | MIT |
 | `dxmt` | DXMT v0.80 | MIT |
 | `dxvk` | DXVK 1.10.3 | zlib |
-| `mono` | wine-mono 10.4.1 | MIT and others, see its files |
-| `gecko` | wine-gecko 2.47.4 | MPL 2.0 and others, see its files |
+| `mono` | wine-mono 10.4.1 | licence text from the wine-mono 10.4.1 tag (`COPYING`) |
+| `gecko` | wine-gecko 2.47.4 | MPL and others: `LICENSE` and `license.html` from the wine-gecko 2.47.4 tag |
 
 The DXMT and DXVK binaries are not inside this engine folder: the Brasa app adds them next to it.
 Their licences are here because Brasa ships them.
