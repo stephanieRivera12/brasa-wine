@@ -9,11 +9,11 @@
     <key>CFBundleExecutable</key>
     <string>wineloader</string><!-- CrossOver Hack 10913 -->
     <key>CFBundleIdentifier</key>
-    <string>com.codeweavers.CrossOver.wineloader</string><!-- CrossOver Hack 10913 -->
+    <string>app.brasa.wineloader</string><!-- CrossOver Hack 10913; Brasa: its own identity -->
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>CrossOver-Hosted Application</string><!-- CrossOver Hack 10913 -->
+    <string>Brasa</string><!-- CrossOver Hack 10913; Brasa: its own identity -->
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
