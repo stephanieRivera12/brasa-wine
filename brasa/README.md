@@ -44,7 +44,7 @@ All are built as x86_64 (run under Rosetta 2) with macOS 14 as the minimum, none
 |---|---|---|
 | gmp | 6.3.0 | `crossover-sources/gnutls/gmp` |
 | nettle (static, inside gnutls) | 3.10 | official GNU tarball, SHA-256 in `constants.sh` |
-| gnutls | 3.8.3 | `crossover-sources/gnutls/gnutls` |
+| gnutls | 3.8.13 | official tarball (gnupg.org), SHA-256 in `constants.sh`; not CodeWeavers' 3.8.3, which lacks the fixes for CVE-2026-1584, -33845, -33846, -42009 and -42010 |
 | freetype | 2.13.3 | `crossover-sources/freetype` |
 | SDL2 | 2.30.12 | official libsdl-org release, SHA-256 in `constants.sh` |
 | libinotify-kqueue | 20240724 | official release, SHA-256 in `constants.sh` |
@@ -72,7 +72,7 @@ brasa/tests/test-lib.sh   # tests of the pure functions of the scripts
 
 ## Packaging
 
-`brasa/package.sh` turns the stage into `vendor/engines/wine-brasa-26.3.0-1/` (spec 5.5): real
+`brasa/package.sh` turns the stage into `vendor/engines/wine-brasa-26.3.0-2/` (spec 5.5): real
 copies of the libraries (never links into the work folder), wine-mono and wine-gecko unpacked in
 `share/wine/`, licences in `licenses/`, debug info stripped (Mach-O with `strip -S`, PE dlls with
 the mingw `strip`), a `VERSION` file, and no write permission for group or others. The DXMT files
@@ -95,7 +95,7 @@ Size of the packaged engine: 1.0 GB (`du -sh`, 2026-11-19), of which mono and ge
 
 `brasa/fetch-third-party-sources.sh` gathers the source of every third-party component the engine
 ships (spec 5.6) into `build/brasa-third-party-sources/`, with a `SHA256SUMS` (`shasum -a 256 -c`).
-It packs the CodeWeavers gmp and gnutls folders that `deps.sh` compiled, copies the nettle, freetype,
+It packs the CodeWeavers gmp folder that `deps.sh` compiled, copies the nettle, gnutls, freetype,
 SDL2 and libinotify-kqueue archives, and downloads the MoltenVK 1.2.10, wine-mono 10.4.1 and
 wine-gecko 2.47.4 source archives. Every download is pinned in `constants.sh`; an empty constant
 makes the script print the hash and stop (exit 3), a wrong one deletes the file (exit 4). Wine, the

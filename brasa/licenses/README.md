@@ -15,7 +15,7 @@ rebuild it:
   https://www.codeweavers.com/crossover/source
 - gmp, nettle, gnutls, freetype, SDL2 and libinotify-kqueue: the source archives of the versions
   used are attached to a release of the same repository, next to `brasa/deps.sh`.
-- libtasn1 and libunistring are compiled inside libgnutls (they come with the gnutls source).
+- libtasn1 and libunistring are compiled inside libgnutls (they come with the official gnutls 3.8.13 source).
   nettle is linked statically into libgnutls.
 - MoltenVK 1.2.10: the official binary, https://github.com/KhronosGroup/MoltenVK (tag v1.2.10-rc2).
 - wine-mono 10.4.1 and wine-gecko 2.47.4, unchanged from https://dl.winehq.org/wine/wine-mono/ and
@@ -28,7 +28,7 @@ rebuild it:
 | `wine` | Wine | LGPL 2.1 or later. `wine/libs/<name>/`: the licences of the third-party libraries Wine bundles (png, jpeg, tiff, zlib, xml2, lcms2, mpg123, vkd3d and others), each with its own terms |
 | `gmp` | gmp 6.3.0 | LGPL 3 or GPL 2 (dual) |
 | `nettle` | nettle 3.10 | LGPL 3 or GPL 2 (dual) |
-| `gnutls` | gnutls 3.8.3 | LGPL 2.1 or later |
+| `gnutls` | gnutls 3.8.13 | LGPL 2.1 or later |
 | `libtasn1` | libtasn1, inside gnutls | LGPL 2.1 or later |
 | `libunistring` | libunistring (gnulib copy), inside gnutls | LGPL 2.1 or later |
 | `freetype` | freetype 2.13.3 | FreeType Licence (FTL) or GPL 2. Credit: "Portions of this software are copyright The FreeType Project (www.freetype.org). All rights reserved." |

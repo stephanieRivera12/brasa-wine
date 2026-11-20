@@ -18,6 +18,10 @@ trap 'rm -rf "${SCRATCH:?}"' EXIT
 
 # The real URLs, before the fixtures replace them.
 REAL_URLS="$MOLTENVK_SRC_URL $MONO_SRC_URL $GECKO_SRC_URL"
+REAL_GNUTLS_URL="$GNUTLS_URL"
+REAL_GNUTLS_SHA256="$GNUTLS_SHA256"
+REAL_PACKED_SOURCES=("${PACKED_SOURCES[@]}")
+REAL_SOURCE_DOWNLOADS=("${SOURCE_DOWNLOADS[@]}")
 
 REMOTE="$SCRATCH/remote"          # stands for the servers
 FIXTURE_FOLDERS="$SCRATCH/folders"
@@ -103,5 +107,13 @@ check "a failed download stops the run" 1 "$([[ "$(status_of main)" != 0 ]] && e
 check "the source URLs are the v1.2.10 tag and the winehq source archives" \
   "https://github.com/KhronosGroup/MoltenVK/archive/refs/tags/v1.2.10.tar.gz https://dl.winehq.org/wine/wine-mono/10.4.1/wine-mono-10.4.1-src.tar.xz https://dl.winehq.org/wine/wine-gecko/2.47.4/wine-gecko-2.47.4-src.tar.xz" \
   "$REAL_URLS"
+
+# gnutls is the official tarball, offered unchanged; only gmp is still packed from CodeWeavers.
+check "gnutls is downloaded and offered unchanged" 1 "$(printf '%s\n' "${REAL_SOURCE_DOWNLOADS[@]}" | grep -c '^GNUTLS$' || true)"
+check "only gmp is packed from CodeWeavers" "1" "${#REAL_PACKED_SOURCES[@]}"
+check "the packed source is gmp" 1 "$(printf '%s\n' "${REAL_PACKED_SOURCES[@]}" | grep -c '|gmp-' || true)"
+check "the gnutls URL is the official 3.8.13 tarball" \
+  "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-3.8.13.tar.xz" "$REAL_GNUTLS_URL"
+check "the gnutls hash is pinned" "ffed8ec1bf09c2426d4f14aae377de4753b53e537d685e604e99a8b16ca9c97e" "$REAL_GNUTLS_SHA256"
 
 finish_checks

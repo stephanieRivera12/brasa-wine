@@ -25,7 +25,7 @@ BRASA_VISIBLE_RESULTS=(brasa-deps brasa-deps-src brasa-wine brasa-wine-stage)
 
 # ---------- Engine ----------
 ENGINE_PREFIX="/opt/wine-brasa"
-ENGINE_VERSION="26.3.0-1"
+ENGINE_VERSION="26.3.0-2"
 STAGE_ENGINE_DIR="$STAGE_DIR$ENGINE_PREFIX"   # what build.sh installs
 ENGINE_REQUIRED_PATHS=(
   bin/wine
@@ -63,16 +63,19 @@ TARGET_CXX="clang++ -arch $TARGET_ARCH"
 # ---------- Library versions ----------
 GMP_VERSION="6.3.0"
 NETTLE_VERSION="3.10"
-GNUTLS_VERSION="3.8.3"
+GNUTLS_VERSION="3.8.13"   # official release: 3.8.12 and 3.8.13 fix CVE-2026-1584, -33845, -33846, -42009, -42010
 FREETYPE_VERSION="2.13.3"
 SDL2_VERSION="2.30.12"
 LIBINOTIFY_VERSION="20240724"
 MOLTENVK_VERSION="1.2.10"
 
 # ---------- Sources downloaded (empty SHA-256: deps.sh prints it and stops) ----------
-DOWNLOAD_NAMES=(NETTLE FREETYPE SDL2 LIBINOTIFY MOLTENVK)
+DOWNLOAD_NAMES=(NETTLE GNUTLS FREETYPE SDL2 LIBINOTIFY MOLTENVK)
 NETTLE_URL="https://ftp.gnu.org/gnu/nettle/nettle-$NETTLE_VERSION.tar.gz"
 NETTLE_SHA256="b4c518adb174e484cb4acea54118f02380c7133771e7e9beb98a0787194ee47c"
+# Official GnuTLS, not CodeWeavers' 3.8.3: signed by Zoltan Fridrich (maintainer); same soname (libgnutls.30).
+GNUTLS_URL="https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-$GNUTLS_VERSION.tar.xz"
+GNUTLS_SHA256="ffed8ec1bf09c2426d4f14aae377de4753b53e537d685e604e99a8b16ca9c97e"
 # CodeWeavers' freetype is a git checkout (no generated configure, empty dlg submodule); its src/ and
 # include/ are identical to this signed release (checked with diff -rq, signature by Werner Lemberg).
 FREETYPE_URL="https://download-mirror.savannah.gnu.org/releases/freetype/freetype-$FREETYPE_VERSION.tar.xz"
@@ -87,9 +90,8 @@ MOLTENVK_URL="https://github.com/KhronosGroup/MoltenVK/releases/download/$MOLTEN
 MOLTENVK_SHA256="64527dc74ea037182de4923095506ecbc66599a9124b4af99de01238c56c3ed1"
 MOLTENVK_DYLIB="libMoltenVK.dylib"
 
-# ---------- Sources from CodeWeavers ----------
+# ---------- Sources from CodeWeavers (gmp only; gnutls is the official tarball above) ----------
 GMP_SOURCE_DIR="$CROSSOVER_SOURCES_DIR/gnutls/gmp"
-GNUTLS_SOURCE_DIR="$CROSSOVER_SOURCES_DIR/gnutls/gnutls"
 # ---------- Library flags ----------
 # Libraries embed __FILE__ (gnutls, SDL2, ...): the compiler maps this Mac's build folders to neutral
 # ones. Passed in CC, so a library that sets its own CFLAGS (libinotify) keeps the map.
@@ -109,7 +111,7 @@ GNUTLS_CONFIGURE_FLAGS=(
   --with-included-libtasn1 --with-included-unistring
   --without-p11-kit --without-idn --without-zlib --without-brotli --without-zstd
   --without-tpm --without-tpm2
-  --disable-nls --disable-tools --disable-doc --disable-tests --disable-cxx --disable-guile
+  --disable-nls --disable-tools --disable-doc --disable-tests --disable-cxx
   "LDFLAGS=-L$DEPS_PREFIX/lib -Wl,-rpath,@loader_path"   # finds libgmp next to libgnutls
   # nettle is static, so its link checks must also name gmp (configure only tries -lhogweed alone)
   "NETTLE_LIBS=-lnettle" "HOGWEED_LIBS=-lhogweed -lnettle -lgmp" "GMP_LIBS=-lgmp"
@@ -239,13 +241,6 @@ LICENSE_FILES=(
   "gmp|$GNUTLS_REAL_DIR/gmp/COPYINGv2"
   "gmp|$GNUTLS_REAL_DIR/gmp/COPYINGv3"
   "gmp|$GNUTLS_REAL_DIR/gmp/COPYING.LESSERv3"
-  "gnutls|$GNUTLS_REAL_DIR/gnutls/LICENSE"
-  "gnutls|$GNUTLS_REAL_DIR/gnutls/doc/COPYING"
-  "gnutls|$GNUTLS_REAL_DIR/gnutls/doc/COPYING.LESSER"
-  "libtasn1|$GNUTLS_REAL_DIR/gnutls/doc/COPYING.LESSER"
-  "libtasn1|$GNUTLS_REAL_DIR/gnutls/lib/minitasn1/libtasn1.h"
-  # gnulib copy inside gnutls (lib/unistring): its headers say LGPL 2.1 or later
-  "libunistring|$GNUTLS_REAL_DIR/gnutls/doc/COPYING.LESSER"
   "dxmt|$DXMT_LICENSE_SOURCE"
   "dxvk|$DXVK_LICENSE_SOURCE"
   "mono|$MONO_LICENSE_SOURCE"
@@ -257,6 +252,12 @@ LICENSE_TAR_MEMBERS=(
   "nettle|nettle-$NETTLE_VERSION.tar.gz|nettle-$NETTLE_VERSION/COPYING.LESSERv3|COPYING.LESSERv3"
   "nettle|nettle-$NETTLE_VERSION.tar.gz|nettle-$NETTLE_VERSION/COPYINGv2|COPYINGv2"
   "nettle|nettle-$NETTLE_VERSION.tar.gz|nettle-$NETTLE_VERSION/COPYINGv3|COPYINGv3"
+  "gnutls|gnutls-$GNUTLS_VERSION.tar.xz|gnutls-$GNUTLS_VERSION/COPYING|COPYING"
+  "gnutls|gnutls-$GNUTLS_VERSION.tar.xz|gnutls-$GNUTLS_VERSION/COPYING.LESSERv2|COPYING.LESSERv2"
+  "libtasn1|gnutls-$GNUTLS_VERSION.tar.xz|gnutls-$GNUTLS_VERSION/COPYING.LESSERv2|COPYING.LESSERv2"
+  "libtasn1|gnutls-$GNUTLS_VERSION.tar.xz|gnutls-$GNUTLS_VERSION/lib/minitasn1/libtasn1.h|libtasn1.h"
+  # gnulib copy inside gnutls (lib/unistring): its headers say LGPL 2.1 or later
+  "libunistring|gnutls-$GNUTLS_VERSION.tar.xz|gnutls-$GNUTLS_VERSION/COPYING.LESSERv2|COPYING.LESSERv2"
   "freetype|freetype-$FREETYPE_VERSION.tar.xz|freetype-$FREETYPE_VERSION/docs/FTL.TXT|FTL.TXT"
   "freetype|freetype-$FREETYPE_VERSION.tar.xz|freetype-$FREETYPE_VERSION/docs/GPLv2.TXT|GPLv2.TXT"
   "sdl2|SDL2-$SDL2_VERSION.tar.gz|SDL2-$SDL2_VERSION/LICENSE.txt|LICENSE.txt"
@@ -289,11 +290,10 @@ TAR_PACK_FLAGS=(--no-mac-metadata --uid 0 --gid 0 --uname root --gname wheel)
 # "folder|archive|top folder inside it": the exact CodeWeavers sources that deps.sh compiled.
 PACKED_SOURCES=(
   "$GNUTLS_REAL_DIR/gmp|gmp-$GMP_VERSION-codeweavers-src.tar.xz|gmp-$GMP_VERSION"
-  "$GNUTLS_REAL_DIR/gnutls|gnutls-$GNUTLS_VERSION-codeweavers-src.tar.xz|gnutls-$GNUTLS_VERSION"
 )
-# Archives of the offer that are downloaded and pinned. The first four are already in DEPS_SRC_DIR.
+# Archives of the offer that are downloaded and pinned. The first five are already in DEPS_SRC_DIR.
 # The *_SRC ones are the source code of the binaries Brasa ships unchanged.
-SOURCE_DOWNLOADS=(NETTLE FREETYPE SDL2 LIBINOTIFY MOLTENVK_SRC MONO_SRC GECKO_SRC)
+SOURCE_DOWNLOADS=(NETTLE GNUTLS FREETYPE SDL2 LIBINOTIFY MOLTENVK_SRC MONO_SRC GECKO_SRC)
 # v1.2.10-rc2 (the tag of the shipped binary) is the same commit as v1.2.10 (edbdcf0).
 MOLTENVK_SRC_URL="https://github.com/KhronosGroup/MoltenVK/archive/refs/tags/v$MOLTENVK_VERSION.tar.gz"
 MOLTENVK_SRC_FILE="MoltenVK-$MOLTENVK_VERSION-src.tar.gz"

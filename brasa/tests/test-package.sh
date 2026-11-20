@@ -16,6 +16,7 @@ source "$TESTS_DIR/../package.sh"
 source "$TESTS_DIR/check.sh"
 
 LICENSE_FILES_REAL=("${LICENSE_FILES[@]}")
+LICENSE_TAR_MEMBERS_REAL=("${LICENSE_TAR_MEMBERS[@]}")
 REAL_WINE_LIBS_DIR="$WINE_LIBS_DIR"
 REAL_WINE_OWN_LIBS=("${WINE_OWN_LIBS[@]}")
 SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/brasa-test.XXXXXX")"
@@ -140,8 +141,19 @@ check "an absent optional tarball is listed as a missing source" "tarball $LIC_S
 OPTIONAL_LICENSE_TAR_MEMBERS=()
 
 # the real constants: libunistring ships the LGPL 2.1 text, Wine ships its LICENSE
-check "libunistring has one licence entry, the LGPL 2.1" "libunistring|$GNUTLS_REAL_DIR/gnutls/doc/COPYING.LESSER" \
-  "$(printf '%s\n' "${LICENSE_FILES_REAL[@]}" | grep '^libunistring|')"
+check "libunistring has one licence entry, the LGPL 2.1 from the official gnutls tarball" \
+  "libunistring|gnutls-$GNUTLS_VERSION.tar.xz|gnutls-$GNUTLS_VERSION/COPYING.LESSERv2|COPYING.LESSERv2" \
+  "$(printf '%s\n' "${LICENSE_TAR_MEMBERS_REAL[@]}" | grep '^libunistring|')"
+check "gnutls licences come from the official tarball (GPL 3 and LGPL 2.1)" \
+  "gnutls|gnutls-$GNUTLS_VERSION.tar.xz|gnutls-$GNUTLS_VERSION/COPYING|COPYING gnutls|gnutls-$GNUTLS_VERSION.tar.xz|gnutls-$GNUTLS_VERSION/COPYING.LESSERv2|COPYING.LESSERv2" \
+  "$(printf '%s\n' "${LICENSE_TAR_MEMBERS_REAL[@]}" | grep '^gnutls|' | tr '\n' ' ' | sed 's/ $//')"
+check "libtasn1 licences come from the official tarball" 2 \
+  "$(printf '%s\n' "${LICENSE_TAR_MEMBERS_REAL[@]}" | grep -c "^libtasn1|gnutls-$GNUTLS_VERSION.tar.xz|" || true)"
+check "no licence is read from CodeWeavers' gnutls tree any more" 0 \
+  "$(printf '%s\n' "${LICENSE_FILES_REAL[@]}" | grep -c "$GNUTLS_REAL_DIR/gnutls" || true)"
+check "the gnutls version is the official 3.8.13" "3.8.13" "$GNUTLS_VERSION"
+check "the engine revision is 26.3.0-2" "26.3.0-2" "$ENGINE_VERSION"
+check "the gnutls soname Wine expects is unchanged" "libgnutls.30.dylib" "$LIB_GNUTLS"
 check "Wine's LICENSE is listed" 1 "$(printf '%s\n' "${LICENSE_FILES_REAL[@]}" | grep -c "^wine|$BRASA_FORK_DIR/LICENSE$" || true)"
 check "the real Wine libs folder exists" 1 "$([[ -d "$REAL_WINE_LIBS_DIR" ]] && echo 1 || echo 0)"
 check "every real third-party Wine lib has a licence-like file" "" "$(WINE_LIBS_DIR="$REAL_WINE_LIBS_DIR"; WINE_OWN_LIBS=("${REAL_WINE_OWN_LIBS[@]}"); for lib in $(third_party_wine_libs); do [[ -n "$(wine_lib_license_files "$lib")" ]] || echo "$lib"; done)"
