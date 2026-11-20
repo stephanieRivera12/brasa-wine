@@ -92,6 +92,28 @@ extract_license_member() {
   tar -xOf "$DEPS_SRC_DIR/$tarball" "$member" > "$dest/$component/$name"
 }
 
+# Copies the licence-like files of every third-party lib of Wine into <licenses>/wine/libs/<lib>/.
+install_wine_lib_licenses() {
+  local dest="$1/$WINE_LIBS_LICENSE_SUBDIR" lib file
+  for lib in $(third_party_wine_libs); do
+    while read -r file; do
+      mkdir -p "$dest/$lib"
+      cp "$file" "$dest/$lib/"
+    done < <(wine_lib_license_files "$lib")
+  done
+}
+
+# Extracts the members that exist; a missing tarball or member is skipped, not an error.
+install_optional_licenses() {
+  local dest="$1" entry component tarball member name
+  for entry in "${OPTIONAL_LICENSE_TAR_MEMBERS[@]}"; do
+    IFS='|' read -r component tarball member name <<< "$entry"
+    "$TAR_TOOL" -tf "$DEPS_SRC_DIR/$tarball" "$member" >/dev/null 2>&1 || continue
+    mkdir -p "$dest/$component"
+    "$TAR_TOOL" -xOf "$DEPS_SRC_DIR/$tarball" "$member" > "$dest/$component/$name"
+  done
+}
+
 install_licenses() {
   local dest="$1/$LICENSES_DIR" entry
   mkdir -p "$dest"
@@ -101,6 +123,8 @@ install_licenses() {
   for entry in "${LICENSE_TAR_MEMBERS[@]}"; do
     extract_license_member "$dest" "$entry"
   done
+  install_wine_lib_licenses "$dest"
+  install_optional_licenses "$dest"
   cp "$LICENSES_README_SOURCE" "$dest/README.md"
 }
 

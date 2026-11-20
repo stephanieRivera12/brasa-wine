@@ -171,3 +171,21 @@ leaks_in() {
   bad="$(forbidden_strings_in "$strings_output")"
   [[ -z "$bad" ]] || printf '%s: contains a build path: %s\n' "$binary" "$bad"
 }
+
+# Prints the libs of Wine's libs/ folder that are third-party code. Fails when the folder is missing.
+third_party_wine_libs() {
+  local lib
+  [[ -d "$WINE_LIBS_DIR" ]] || { printf 'ERROR: %s is missing\n' "$WINE_LIBS_DIR" >&2; return 1; }
+  for lib in $(find "$WINE_LIBS_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | LC_ALL=C sort); do
+    [[ " ${WINE_OWN_LIBS[*]} " == *" $lib "* ]] || printf '%s\n' "$lib"
+  done
+}
+
+# Prints the licence-like files (LICENSE*, COPYING*, ...) at the top of a Wine lib folder.
+wine_lib_license_files() {
+  local pattern name_args=()
+  for pattern in "${WINE_LIB_LICENSE_NAMES[@]}"; do
+    name_args+=(-o -iname "$pattern")
+  done
+  find "$WINE_LIBS_DIR/$1" -maxdepth 1 -type f \( "${name_args[@]:1}" \) | LC_ALL=C sort
+}

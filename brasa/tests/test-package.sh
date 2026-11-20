@@ -15,6 +15,9 @@ source "$TESTS_DIR/../package.sh"
 # shellcheck source=check.sh
 source "$TESTS_DIR/check.sh"
 
+LICENSE_FILES_REAL=("${LICENSE_FILES[@]}")
+REAL_WINE_LIBS_DIR="$WINE_LIBS_DIR"
+REAL_WINE_OWN_LIBS=("${WINE_OWN_LIBS[@]}")
 SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/brasa-test.XXXXXX")"
 trap 'rm -rf "${SCRATCH:?}"' EXIT
 
@@ -91,6 +94,42 @@ check "the committed mono and gecko licences exist" "" "$(missing_license_source
 install_licenses "$PKG"
 check "mono's COPYING is installed" 1 "$([[ -s "$PKG/licenses/mono/COPYING" ]] && echo 1 || echo 0)"
 check "gecko's LICENSE and license.html are installed" 2 "$(ls "$PKG/licenses/gecko" | wc -l | tr -d ' ')"
+
+# Wine's bundled third-party libs: every licence-like file lands in licenses/wine/libs/<lib>/
+WINE_LIBS_DIR="$SCRATCH/wine-libs"
+WINE_OWN_LIBS=(own)
+mkdir -p "$WINE_LIBS_DIR/own" "$WINE_LIBS_DIR/png" "$WINE_LIBS_DIR/tiff" "$WINE_LIBS_DIR/bare"
+printf 'x' > "$WINE_LIBS_DIR/own/LICENSE"
+printf 'png' > "$WINE_LIBS_DIR/png/LICENSE"; printf 'src' > "$WINE_LIBS_DIR/png/png.c"
+printf 'tiff' > "$WINE_LIBS_DIR/tiff/COPYRIGHT"; printf 'n' > "$WINE_LIBS_DIR/tiff/notice.txt"
+check "third-party libs exclude Wine's own" "bare png tiff" "$(third_party_wine_libs | tr '\n' ' ' | sed 's/ $//')"
+check "licence-like files are found, others not" "$WINE_LIBS_DIR/png/LICENSE" "$(wine_lib_license_files png)"
+install_wine_lib_licenses "$PKG/licenses"
+check "a lib's licence is copied under its name" "png" "$(cat "$PKG/licenses/wine/libs/png/LICENSE")"
+check "every licence-like file of a lib is copied" "COPYRIGHT notice.txt" "$(ls "$PKG/licenses/wine/libs/tiff" | tr '\n' ' ' | sed 's/ $//')"
+check "a lib without a licence file gets no folder" 0 "$([[ -e "$PKG/licenses/wine/libs/bare" ]] && echo 1 || echo 0)"
+check "a source file is not copied" 0 "$([[ -e "$PKG/licenses/wine/libs/png/png.c" ]] && echo 1 || echo 0)"
+check "Wine's own libs are not copied" 0 "$([[ -e "$PKG/licenses/wine/libs/own" ]] && echo 1 || echo 0)"
+WINE_LIBS_DIR="$SCRATCH/no-such-libs"
+check "a missing libs folder is an error, not an empty list" 1 "$(status_of third_party_wine_libs)"
+
+# optional licence members (MoltenVK NOTICE): copied only when the source tarball has them
+mkdir -p "$LIC_SRC/t/src-1"; printf 'notice' > "$LIC_SRC/t/src-1/NOTICE"; printf 'other' > "$LIC_SRC/t/src-1/README"
+(cd "$LIC_SRC/t" && tar -czf "$LIC_SRC/with-notice.tar.gz" src-1)
+mkdir -p "$LIC_SRC/t/src-2"; printf 'other' > "$LIC_SRC/t/src-2/README"
+(cd "$LIC_SRC/t" && tar -czf "$LIC_SRC/without-notice.tar.gz" src-2)
+OPTIONAL_LICENSE_TAR_MEMBERS=("opt|with-notice.tar.gz|src-1/NOTICE|NOTICE" "opt2|without-notice.tar.gz|src-2/NOTICE|NOTICE" "opt3|absent.tar.gz|x/NOTICE|NOTICE")
+install_optional_licenses "$PKG/licenses"
+check "an optional member present in the tarball is copied" "notice" "$(cat "$PKG/licenses/opt/NOTICE")"
+check "an optional member absent from the tarball is skipped" 0 "$([[ -e "$PKG/licenses/opt2" ]] && echo 1 || echo 0)"
+check "an optional member with no tarball is skipped" 0 "$([[ -e "$PKG/licenses/opt3" ]] && echo 1 || echo 0)"
+
+# the real constants: libunistring ships the LGPL 2.1 text, Wine ships its LICENSE
+check "libunistring has one licence entry, the LGPL 2.1" "libunistring|$GNUTLS_REAL_DIR/gnutls/doc/COPYING.LESSER" \
+  "$(printf '%s\n' "${LICENSE_FILES_REAL[@]}" | grep '^libunistring|')"
+check "Wine's LICENSE is listed" 1 "$(printf '%s\n' "${LICENSE_FILES_REAL[@]}" | grep -c "^wine|$BRASA_FORK_DIR/LICENSE$" || true)"
+check "the real Wine libs folder exists" 1 "$([[ -d "$REAL_WINE_LIBS_DIR" ]] && echo 1 || echo 0)"
+check "every real third-party Wine lib has a licence-like file" "" "$(WINE_LIBS_DIR="$REAL_WINE_LIBS_DIR"; WINE_OWN_LIBS=("${REAL_WINE_OWN_LIBS[@]}"); for lib in $(third_party_wine_libs); do [[ -n "$(wine_lib_license_files "$lib")" ]] || echo "$lib"; done)"
 
 # version and permissions
 write_version "$PKG" "abc123"

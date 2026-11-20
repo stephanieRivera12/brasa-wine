@@ -234,6 +234,7 @@ GECKO_LICENSE_HTML_SOURCE="$BRASA_FORK_DIR/brasa/licenses/third-party/gecko/lice
 # "component|file": copied into licenses/<component>/.
 LICENSE_FILES=(
   "wine|$BRASA_FORK_DIR/COPYING.LIB"
+  "wine|$BRASA_FORK_DIR/LICENSE"
   "gmp|$GNUTLS_REAL_DIR/gmp/COPYING"
   "gmp|$GNUTLS_REAL_DIR/gmp/COPYINGv2"
   "gmp|$GNUTLS_REAL_DIR/gmp/COPYINGv3"
@@ -243,8 +244,8 @@ LICENSE_FILES=(
   "gnutls|$GNUTLS_REAL_DIR/gnutls/doc/COPYING.LESSER"
   "libtasn1|$GNUTLS_REAL_DIR/gnutls/doc/COPYING.LESSER"
   "libtasn1|$GNUTLS_REAL_DIR/gnutls/lib/minitasn1/libtasn1.h"
-  "libunistring|$GNUTLS_REAL_DIR/gmp/COPYING.LESSERv3"
-  "libunistring|$GNUTLS_REAL_DIR/gmp/COPYINGv2"
+  # gnulib copy inside gnutls (lib/unistring): its headers say LGPL 2.1 or later
+  "libunistring|$GNUTLS_REAL_DIR/gnutls/doc/COPYING.LESSER"
   "dxmt|$DXMT_LICENSE_SOURCE"
   "dxvk|$DXVK_LICENSE_SOURCE"
   "mono|$MONO_LICENSE_SOURCE"
@@ -262,6 +263,12 @@ LICENSE_TAR_MEMBERS=(
   "libinotify|libinotify-$LIBINOTIFY_VERSION.tar.gz|libinotify-$LIBINOTIFY_VERSION/LICENSE|LICENSE"
   "moltenvk|MoltenVK-macos.tar|MoltenVK/LICENSE|LICENSE"
 )
+# Wine's libs/ folder holds third-party code (png, tiff, ...) with its own licences, shipped under
+# licenses/wine/libs/<lib>/. These are Wine's own helper libraries: Wine's licence covers them.
+WINE_LIBS_DIR="$BRASA_FORK_DIR/libs"
+WINE_OWN_LIBS=(adsiid dmoguids dxerr8 dxerr9 dxguid mfuuid strmbase strmiids uuid wbemuuid wmcodecdspuuid)
+WINE_LIB_LICENSE_NAMES=("LICENSE*" "COPYING*" "COPYRIGHT*" "NOTICE*")   # matched without case
+WINE_LIBS_LICENSE_SUBDIR="wine/libs"
 CHECK_PROBLEMS_SHOWN=20
 
 # ---------- Stripping (PE dlls need the mingw tool of their architecture) ----------
@@ -295,3 +302,9 @@ MONO_SRC_URL="$ADDONS_BASE_URL/wine-mono/$MONO_VERSION/wine-mono-$MONO_VERSION-s
 MONO_SRC_SHA256=""
 GECKO_SRC_URL="$ADDONS_BASE_URL/wine-gecko/$GECKO_VERSION/wine-gecko-$GECKO_VERSION-src.tar.xz"
 GECKO_SRC_SHA256=""
+# "component|tarball|member|file name": copied into licenses/<component>/ only if the tarball and the
+# member exist. MoltenVK's source may carry a NOTICE (Apache 2.0 s4d); unverified until the first
+# run of fetch-third-party-sources.sh.
+OPTIONAL_LICENSE_TAR_MEMBERS=(
+  "moltenvk|$MOLTENVK_SRC_FILE|MoltenVK-$MOLTENVK_VERSION/NOTICE|NOTICE"
+)

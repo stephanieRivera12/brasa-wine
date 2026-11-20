@@ -100,6 +100,17 @@ components_without_license() {
   done
 }
 
+# Prints the third-party libs of Wine that have no licence in the engine. An unreadable libs
+# folder is reported too: never a silent pass.
+wine_libs_without_license() {
+  local libs lib dir
+  libs="$(third_party_wine_libs 2>/dev/null)" || { printf '%s (cannot list it)\n' "$WINE_LIBS_DIR"; return 0; }
+  for lib in $libs; do
+    dir="$1/$WINE_LIBS_LICENSE_SUBDIR/$lib"
+    [[ -d "$dir" && -n "$(ls -A "$dir" 2>/dev/null)" ]] || printf '%s\n' "$lib"
+  done
+}
+
 missing_license_readme() {
   [[ -s "$1/README.md" ]] || printf 'README.md\n'
 }
@@ -155,6 +166,7 @@ check_addons() {
 
 check_licenses() {
   components_without_license "$1/$LICENSES_DIR" | sed 's|^|no licence for: |'
+  wine_libs_without_license "$1/$LICENSES_DIR" | sed 's|^|no licence for Wine lib: |'
   missing_license_readme "$1/$LICENSES_DIR" | sed 's|^|missing: |'
 }
 

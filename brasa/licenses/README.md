@@ -25,14 +25,14 @@ rebuild it:
 
 | Folder | Component | Licence |
 |---|---|---|
-| `wine` | Wine | LGPL 2.1 or later |
+| `wine` | Wine | LGPL 2.1 or later. `wine/libs/<name>/`: the licences of the third-party libraries Wine bundles (png, jpeg, tiff, zlib, xml2, lcms2, mpg123, vkd3d and others), each with its own terms |
 | `gmp` | gmp 6.3.0 | LGPL 3 or GPL 2 (dual) |
 | `nettle` | nettle 3.10 | LGPL 3 or GPL 2 (dual) |
 | `gnutls` | gnutls 3.8.3 | LGPL 2.1 or later |
 | `libtasn1` | libtasn1, inside gnutls | LGPL 2.1 or later |
-| `libunistring` | libunistring, inside gnutls | LGPL 3 or GPL 2 (dual) |
+| `libunistring` | libunistring (gnulib copy), inside gnutls | LGPL 2.1 or later |
 | `freetype` | freetype 2.13.3 | FreeType Licence (FTL) or GPL 2. Credit: "Portions of this software are copyright The FreeType Project (www.freetype.org). All rights reserved." |
-| `moltenvk` | MoltenVK 1.2.10 | Apache 2.0 |
+| `moltenvk` | MoltenVK 1.2.10 | Apache 2.0 (its NOTICE file is included when the source has one) |
 | `sdl2` | SDL2 2.30.12 | zlib |
 | `libinotify` | libinotify-kqueue 20240724 | MIT |
 | `dxmt` | DXMT v0.80 | MIT |

@@ -128,4 +128,19 @@ chmod 644 "$MANY/f1.txt"
 RPATH_LOOP_OUTPUT="$( (ulimit -n 64; for _ in $(seq 1 1500); do disallowed_rpaths "$RPATH_OK"; done) 2>&1 || true)"
 check "1500 rpath inspections under a low fd limit leave no error" "" "$RPATH_LOOP_OUTPUT"
 
+# Wine's bundled libs: a third-party lib without a licence folder fails the licence check
+WINE_LIBS_DIR="$SCRATCH/wine-libs"; WINE_OWN_LIBS=(own)
+mkdir -p "$WINE_LIBS_DIR/own" "$WINE_LIBS_DIR/png" "$WINE_LIBS_DIR/bare"
+LIC_ENGINE="$SCRATCH/lic-engine"; LICENSES_DIR="licenses"; LICENSE_COMPONENTS=(wine)
+mkdir -p "$LIC_ENGINE/licenses/wine/libs/png"
+printf x > "$LIC_ENGINE/licenses/wine/COPYING.LIB"; printf x > "$LIC_ENGINE/licenses/README.md"; printf x > "$LIC_ENGINE/licenses/wine/libs/png/LICENSE"
+check "a lib without a licence folder is reported" "bare" "$(wine_libs_without_license "$LIC_ENGINE/licenses")"
+check "check_licenses fails for it" "no licence for Wine lib: bare" "$(check_licenses "$LIC_ENGINE")"
+mkdir -p "$LIC_ENGINE/licenses/wine/libs/bare"
+check "an empty licence folder does not count" "bare" "$(wine_libs_without_license "$LIC_ENGINE/licenses")"
+printf x > "$LIC_ENGINE/licenses/wine/libs/bare/LICENSE"
+check "check_licenses passes once every lib has a licence" "" "$(check_licenses "$LIC_ENGINE")"
+WINE_LIBS_DIR="$SCRATCH/no-such-libs"
+check "an unreadable libs folder fails the check, never passes" 1 "$(check_licenses "$LIC_ENGINE" | grep -c . || true)"
+
 finish_checks
