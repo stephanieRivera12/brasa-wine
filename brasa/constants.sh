@@ -111,6 +111,9 @@ GNUTLS_CONFIGURE_FLAGS=(
   --with-included-libtasn1 --with-included-unistring
   --without-p11-kit --without-idn --without-zlib --without-brotli --without-zstd
   --without-tpm --without-tpm2
+  # Empty = no system-wide priority file: otherwise 3.8.13 embeds <prefix>/etc/gnutls/config (a build
+  # path) and would let a file on the Mac change how the engine negotiates TLS.
+  "--with-system-priority-file="
   --disable-nls --disable-tools --disable-doc --disable-tests --disable-cxx
   "LDFLAGS=-L$DEPS_PREFIX/lib -Wl,-rpath,@loader_path"   # finds libgmp next to libgnutls
   # nettle is static, so its link checks must also name gmp (configure only tries -lhogweed alone)
