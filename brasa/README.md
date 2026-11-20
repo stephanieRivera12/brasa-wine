@@ -86,3 +86,14 @@ short sonames exist, mono/gecko and the licences are present, nothing is writabl
 link leaves the engine. Tests: `brasa/tests/test-engine-checks.sh`, `brasa/tests/test-package.sh`.
 
 Size of the packaged engine: 1.0 GB (`du -sh`, 2026-11-19), of which mono and gecko are about 440 MB. CrossOver 26.3.0 takes 998 MB.
+
+## Source offer
+
+`brasa/fetch-third-party-sources.sh` gathers the source of every third-party component the engine
+ships (spec 5.6) into `build/brasa-third-party-sources/`, with a `SHA256SUMS` (`shasum -a 256 -c`).
+It packs the CodeWeavers gmp and gnutls folders that `deps.sh` compiled, copies the nettle, freetype,
+SDL2 and libinotify-kqueue archives, and downloads the MoltenVK 1.2.10, wine-mono 10.4.1 and
+wine-gecko 2.47.4 source archives. Every download is pinned in `constants.sh`; an empty constant
+makes the script print the hash and stop (exit 3), a wrong one deletes the file (exit 4). Wine, the
+patch and these scripts are the repository itself, so they are not in the archives.
+Test: `brasa/tests/test-fetch-third-party-sources.sh`.

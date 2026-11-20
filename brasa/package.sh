@@ -11,10 +11,6 @@ source "$BRASA_DIR/lib.sh"
 # shellcheck source=engine-checks.sh
 source "$BRASA_DIR/engine-checks.sh"
 
-download_file() {
-  curl --fail --location --retry 3 --output "$2" "$1"
-}
-
 archive_path() {
   local url_var="$1_URL"
   printf '%s/%s' "$DOWNLOADS_DIR" "$(basename "${!url_var}")"

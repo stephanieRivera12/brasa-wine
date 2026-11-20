@@ -10,6 +10,11 @@ say() {
   printf '\n== %s\n' "$*"
 }
 
+# Downloads <url> ($1) into <file> ($2); fails on an HTTP error.
+download_file() {
+  curl --fail --location --retry 3 --output "$2" "$1"
+}
+
 sha256_of() {
   local file="$1"
   shasum -a 256 "$file" | cut -d' ' -f1

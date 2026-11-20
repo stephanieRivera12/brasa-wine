@@ -271,3 +271,27 @@ PE_STRIP_TOOLS=("lib/wine/i386-windows:i686-w64-mingw32-strip" "lib/wine/x86_64-
 PREVIOUS_ENGINE_SUFFIX=".previous"
 MACHO_MAGICS=(feedface cefaedfe feedfacf cffaedfe cafebabe cafebabf)
 STATUS_UNREADABLE=2
+
+# ---------- Third-party source offer (spec 5.6) ----------
+# Empty SHA-256: fetch-third-party-sources.sh prints it and stops (exit 3).
+SOURCES_OUT_DIR="$BRASA_BUILD_DIR/brasa-third-party-sources"
+SOURCES_SUMS_NAME="SHA256SUMS"
+TAR_TOOL="/usr/bin/tar"   # bsdtar: -s renames the top folder
+# No owner of this Mac and no AppleDouble files inside the offered archives.
+TAR_PACK_FLAGS=(--no-mac-metadata --uid 0 --gid 0 --uname root --gname wheel)
+# "folder|archive|top folder inside it": the exact CodeWeavers sources that deps.sh compiled.
+PACKED_SOURCES=(
+  "$GNUTLS_REAL_DIR/gmp|gmp-$GMP_VERSION-codeweavers-src.tar.xz|gmp-$GMP_VERSION"
+  "$GNUTLS_REAL_DIR/gnutls|gnutls-$GNUTLS_VERSION-codeweavers-src.tar.xz|gnutls-$GNUTLS_VERSION"
+)
+# Archives of the offer that are downloaded and pinned. The first four are already in DEPS_SRC_DIR.
+# The *_SRC ones are the source code of the binaries Brasa ships unchanged.
+SOURCE_DOWNLOADS=(NETTLE FREETYPE SDL2 LIBINOTIFY MOLTENVK_SRC MONO_SRC GECKO_SRC)
+# v1.2.10-rc2 (the tag of the shipped binary) is the same commit as v1.2.10 (edbdcf0).
+MOLTENVK_SRC_URL="https://github.com/KhronosGroup/MoltenVK/archive/refs/tags/v$MOLTENVK_VERSION.tar.gz"
+MOLTENVK_SRC_FILE="MoltenVK-$MOLTENVK_VERSION-src.tar.gz"
+MOLTENVK_SRC_SHA256=""
+MONO_SRC_URL="$ADDONS_BASE_URL/wine-mono/$MONO_VERSION/wine-mono-$MONO_VERSION-src.tar.xz"
+MONO_SRC_SHA256=""
+GECKO_SRC_URL="$ADDONS_BASE_URL/wine-gecko/$GECKO_VERSION/wine-gecko-$GECKO_VERSION-src.tar.xz"
+GECKO_SRC_SHA256=""
