@@ -297,11 +297,11 @@ SOURCE_DOWNLOADS=(NETTLE FREETYPE SDL2 LIBINOTIFY MOLTENVK_SRC MONO_SRC GECKO_SR
 # v1.2.10-rc2 (the tag of the shipped binary) is the same commit as v1.2.10 (edbdcf0).
 MOLTENVK_SRC_URL="https://github.com/KhronosGroup/MoltenVK/archive/refs/tags/v$MOLTENVK_VERSION.tar.gz"
 MOLTENVK_SRC_FILE="MoltenVK-$MOLTENVK_VERSION-src.tar.gz"
-MOLTENVK_SRC_SHA256=""
+MOLTENVK_SRC_SHA256="3435d34ea2dafb043dd82ac5e9d2de7090462ab7cea6ad8bcc14d9c34ff99e9c"
 MONO_SRC_URL="$ADDONS_BASE_URL/wine-mono/$MONO_VERSION/wine-mono-$MONO_VERSION-src.tar.xz"
-MONO_SRC_SHA256=""
+MONO_SRC_SHA256="128e335396689e466dff5e1aa0770a714dbe3d16397fc4ddbb8a80999c67323b"
 GECKO_SRC_URL="$ADDONS_BASE_URL/wine-gecko/$GECKO_VERSION/wine-gecko-$GECKO_VERSION-src.tar.xz"
-GECKO_SRC_SHA256=""
+GECKO_SRC_SHA256="bf31b6619570ce289f07298bdd670081635cd12104010050f06c16e44ccd153f"
 # "component|tarball|member|file name": copied into licenses/<component>/ only if the tarball and the
 # member exist. MoltenVK's source may carry a NOTICE (Apache 2.0 s4d); unverified until the first
 # run of fetch-third-party-sources.sh.
