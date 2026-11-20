@@ -80,6 +80,10 @@ that the spike left in the stage (`winemetal.*`) are left out: the app adds DXMT
 run stops with exit 3 and prints the SHA-256 of the three mono/gecko archives, to be checked and
 pinned in `constants.sh`; it then checks the result with `brasa/check-engine.sh` before moving it.
 
+`package.sh` needs the MoltenVK source archive that `fetch-third-party-sources.sh` downloads (run that first):
+it looks for MoltenVK's `NOTICE` there and ships it; if the archive is missing, or a NOTICE sits at another path, it
+stops (exit 10); if upstream has none, it says so and ships none.
+
 `brasa/check-engine.sh <engine>` exits 0 only if every Mach-O is x86_64 and links only to
 `@rpath`, `@loader_path`, `/usr/lib` and `/System`, no file holds a personal or build path, the
 short sonames exist, mono/gecko and the licences are present, nothing is writable by others and no

@@ -77,6 +77,10 @@ missing_license_sources() {
     tarball="$DEPS_SRC_DIR/$(cut -d'|' -f2 <<< "$entry")"
     [[ -f "$tarball" ]] || printf 'tarball %s\n' "$tarball"
   done
+  for entry in ${OPTIONAL_LICENSE_TAR_MEMBERS[@]+"${OPTIONAL_LICENSE_TAR_MEMBERS[@]}"}; do
+    tarball="$DEPS_SRC_DIR/$(cut -d'|' -f2 <<< "$entry")"
+    [[ -f "$tarball" ]] || printf 'tarball %s\n' "$tarball"
+  done
 }
 
 copy_license_file() {
@@ -103,14 +107,33 @@ install_wine_lib_licenses() {
   done
 }
 
-# Extracts the members that exist; a missing tarball or member is skipped, not an error.
-install_optional_licenses() {
-  local dest="$1" entry component tarball member name
-  for entry in "${OPTIONAL_LICENSE_TAR_MEMBERS[@]}"; do
-    IFS='|' read -r component tarball member name <<< "$entry"
-    "$TAR_TOOL" -tf "$DEPS_SRC_DIR/$tarball" "$member" >/dev/null 2>&1 || continue
+# Prints the entries of a tarball listing, other than the expected member, that look like the licence file.
+look_alikes() {
+  grep -E "(^|/)$2[^/]*$" <<< "$1" | grep -Fxv -- "$3" || true
+}
+
+# Copies an optional licence member (MoltenVK's NOTICE). Fails closed: the source tarball must be
+# there, and a look-alike at another path is an error. Only "none upstream" is accepted.
+install_optional_license() {
+  local dest="$1" component tarball member name archive listing found
+  IFS='|' read -r component tarball member name <<< "$2"
+  archive="$DEPS_SRC_DIR/$tarball"
+  [[ -f "$archive" ]] || { printf 'Optional licence source missing (run fetch-third-party-sources.sh first): %s\n' "$archive" >&2; return "$EXIT_MISSING_SOURCE"; }
+  listing="$("$TAR_TOOL" -tf "$archive")" || return "$EXIT_MISSING_SOURCE"
+  if grep -Fxq -- "$member" <<< "$listing"; then
     mkdir -p "$dest/$component"
-    "$TAR_TOOL" -xOf "$DEPS_SRC_DIR/$tarball" "$member" > "$dest/$component/$name"
+    "$TAR_TOOL" -xOf "$archive" "$member" > "$dest/$component/$name"
+    return 0
+  fi
+  found="$(look_alikes "$listing" "$name" "$member")"
+  [[ -z "$found" ]] || { printf '%s found at an unexpected path in %s:\n%s\n' "$name" "$tarball" "$found" >&2; return "$EXIT_MISSING_SOURCE"; }
+  printf 'no %s upstream in %s (%s): none to ship\n' "$name" "$tarball" "$component"
+}
+
+install_optional_licenses() {
+  local entry
+  for entry in ${OPTIONAL_LICENSE_TAR_MEMBERS[@]+"${OPTIONAL_LICENSE_TAR_MEMBERS[@]}"}; do
+    install_optional_license "$1" "$entry" || return "$?"
   done
 }
 
@@ -124,7 +147,7 @@ install_licenses() {
     extract_license_member "$dest" "$entry"
   done
   install_wine_lib_licenses "$dest"
-  install_optional_licenses "$dest"
+  install_optional_licenses "$dest" || return "$?"
   cp "$LICENSES_README_SOURCE" "$dest/README.md"
 }
 

@@ -77,6 +77,7 @@ LIC_SRC="$SCRATCH/lic-src"; mkdir -p "$LIC_SRC/t/pkg-1"
 printf 'wine' > "$LIC_SRC/COPYING.LIB"; printf 'inner' > "$LIC_SRC/t/pkg-1/LICENSE"
 (cd "$LIC_SRC/t" && tar -czf "$LIC_SRC/pkg-1.tar.gz" pkg-1)
 DEPS_SRC_DIR="$LIC_SRC"
+OPTIONAL_LICENSE_TAR_MEMBERS=()
 LICENSE_FILES=("wine|$LIC_SRC/COPYING.LIB" "gone|$LIC_SRC/absent")
 LICENSE_TAR_MEMBERS=("pkg|pkg-1.tar.gz|pkg-1/LICENSE|LICENSE" "pkg2|absent.tar.gz|x/LICENSE|LICENSE")
 check "missing licence sources are listed" $'file '"$LIC_SRC/absent"$'\ntarball '"$LIC_SRC/absent.tar.gz" "$(missing_license_sources)"
@@ -118,11 +119,25 @@ mkdir -p "$LIC_SRC/t/src-1"; printf 'notice' > "$LIC_SRC/t/src-1/NOTICE"; printf
 (cd "$LIC_SRC/t" && tar -czf "$LIC_SRC/with-notice.tar.gz" src-1)
 mkdir -p "$LIC_SRC/t/src-2"; printf 'other' > "$LIC_SRC/t/src-2/README"
 (cd "$LIC_SRC/t" && tar -czf "$LIC_SRC/without-notice.tar.gz" src-2)
-OPTIONAL_LICENSE_TAR_MEMBERS=("opt|with-notice.tar.gz|src-1/NOTICE|NOTICE" "opt2|without-notice.tar.gz|src-2/NOTICE|NOTICE" "opt3|absent.tar.gz|x/NOTICE|NOTICE")
+mkdir -p "$LIC_SRC/t/src-3"; printf 'elsewhere' > "$LIC_SRC/t/src-3/NOTICE.txt"
+(cd "$LIC_SRC/t" && tar -czf "$LIC_SRC/moved-notice.tar.gz" src-3)
+optional() { OPTIONAL_LICENSE_TAR_MEMBERS=("$1"); }
+optional "opt|with-notice.tar.gz|src-1/NOTICE|NOTICE"
+check "an optional member present in the tarball is copied" 0 "$(status_of install_optional_licenses "$PKG/licenses")"
 install_optional_licenses "$PKG/licenses"
-check "an optional member present in the tarball is copied" "notice" "$(cat "$PKG/licenses/opt/NOTICE")"
-check "an optional member absent from the tarball is skipped" 0 "$([[ -e "$PKG/licenses/opt2" ]] && echo 1 || echo 0)"
-check "an optional member with no tarball is skipped" 0 "$([[ -e "$PKG/licenses/opt3" ]] && echo 1 || echo 0)"
+check "the copied member has its content" "notice" "$(cat "$PKG/licenses/opt/NOTICE")"
+optional "opt2|without-notice.tar.gz|src-2/NOTICE|NOTICE"
+check "no NOTICE anywhere upstream is accepted" 0 "$(status_of install_optional_licenses "$PKG/licenses")"
+check "no NOTICE upstream is recorded in the output" 1 "$(install_optional_licenses "$PKG/licenses" 2>&1 | grep -c 'no NOTICE upstream' || true)"
+check "no NOTICE upstream creates no file" 0 "$([[ -e "$PKG/licenses/opt2" ]] && echo 1 || echo 0)"
+optional "opt3|moved-notice.tar.gz|src-1/NOTICE|NOTICE"
+check "a NOTICE at another path (other top folder) fails" "$EXIT_MISSING_SOURCE" "$(status_of install_optional_licenses "$PKG/licenses")"
+check "the failure names the NOTICE found" 1 "$(install_optional_licenses "$PKG/licenses" 2>&1 | grep -c 'src-3/NOTICE.txt' || true)"
+optional "opt4|absent.tar.gz|x/NOTICE|NOTICE"
+check "an absent tarball fails, never skips" "$EXIT_MISSING_SOURCE" "$(status_of install_optional_licenses "$PKG/licenses")"
+DEPS_SRC_DIR="$LIC_SRC"
+check "an absent optional tarball is listed as a missing source" "tarball $LIC_SRC/absent.tar.gz" "$(missing_license_sources)"
+OPTIONAL_LICENSE_TAR_MEMBERS=()
 
 # the real constants: libunistring ships the LGPL 2.1 text, Wine ships its LICENSE
 check "libunistring has one licence entry, the LGPL 2.1" "libunistring|$GNUTLS_REAL_DIR/gnutls/doc/COPYING.LESSER" \
