@@ -5,7 +5,7 @@
 # ---------- Paths ----------
 BRASA_FORK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # vendor/brasa-wine
 BRASA_ROOT="$(cd "$BRASA_FORK_DIR/../.." && pwd)"                   # the Brasa repository
-# autoconf and make break on spaces in paths, and the Brasa folder has one ("paginas web"). The
+# autoconf and make break on spaces in paths, and the Brasa path contains a space. The
 # real work happens in a space-free folder; <Brasa>/build/<name> links to each result and the
 # sources are reached through links in WORK_DIR/src.
 : "${BRASA_WORK_DIR:=$HOME/.brasa-engine-work}"

@@ -10,9 +10,18 @@ https://www.codeweavers.com/crossover/source). The first commit imports it uncha
 
 ## What changes against CodeWeavers
 
-Brasa adds two things: the scripts and tests in `brasa/`, and the "per-program extra command-line
-options" patch in `dlls/kernelbase` (`brasa_cmdline.c`, `brasa_cmdline.h`, `brasa_constants.h`, one
-call in `process.c`, one line in `Makefile.in`). The diff against the first commit is exactly that.
+Brasa adds four things; the diff against the first commit is exactly these:
+
+- the scripts and tests in `brasa/`;
+- the "per-program extra command-line options" patch in `dlls/kernelbase` (`brasa_cmdline.c`,
+  `brasa_cmdline.h`, `brasa_constants.h`, one call in `process.c`, one line in `Makefile.in`);
+- `loader/wine_info.plist.in`: the two lines of CodeWeavers' "CrossOver Hack 10913" now carry Brasa's
+  identity (bundle identifier `app.brasa.wineloader`, bundle name `Brasa`) instead of the CrossOver
+  names;
+- `programs/iexplore/iexplore.inf`: the display name of the HTML engine entry is "Wine HTML engine"
+  instead of "CrossOver HTML engine".
+
+Every other CodeWeavers patch is kept untouched.
 
 ### Per-program command-line options
 
@@ -42,13 +51,13 @@ All are built as x86_64 (run under Rosetta 2) with macOS 14 as the minimum, none
 
 | Library | Version | Source |
 |---|---|---|
-| gmp | 6.3.0 | `crossover-sources/gnutls/gmp` |
+| gmp | 6.3.0 | CodeWeavers' `crossover-sources/gnutls/gmp` (packed in the source offer) |
 | nettle (static, inside gnutls) | 3.10 | official GNU tarball, SHA-256 in `constants.sh` |
-| gnutls | 3.8.13 | official tarball (gnupg.org), SHA-256 in `constants.sh`; not CodeWeavers' 3.8.3, which lacks the fixes for CVE-2026-1584, -33845, -33846, -42009 and -42010 |
-| freetype | 2.13.3 | `crossover-sources/freetype` |
+| gnutls | 3.8.13 | official tarball (gnupg.org), SHA-256 in `constants.sh`; built with an empty system priority file (no file on the Mac changes how the engine negotiates TLS); not CodeWeavers' 3.8.3, which lacks the fixes for CVE-2026-1584, -33845, -33846, -42009 and -42010 |
+| freetype | 2.13.3 | official signed tarball (savannah.gnu.org), SHA-256 in `constants.sh`; CodeWeavers' checkout has the same `src/` and `include/` but no generated `configure` |
 | SDL2 | 2.30.12 | official libsdl-org release, SHA-256 in `constants.sh` |
 | libinotify-kqueue | 20240724 | official release, SHA-256 in `constants.sh` |
-| MoltenVK | 1.2.10 | official KhronosGroup release, x86_64 slice only |
+| MoltenVK | 1.2.10 | official KhronosGroup binary (tag v1.2.10-rc2, same commit as v1.2.10), SHA-256 in `constants.sh`, x86_64 slice only |
 
 Only the tools come from Homebrew: `mingw-w64`, `bison`, `pkgconf`.
 
@@ -89,7 +98,7 @@ stops (exit 10); if upstream has none, it says so and ships none.
 short sonames exist, mono/gecko and the licences are present, nothing is writable by others and no
 link leaves the engine. Tests: `brasa/tests/test-engine-checks.sh`, `brasa/tests/test-package.sh`.
 
-Size of the packaged engine: 1.0 GB (`du -sh`, 2026-11-19), of which mono and gecko are about 440 MB. CrossOver 26.3.0 takes 998 MB.
+Size of the packaged engine 26.3.0-2: 943 MB (`du -sh`, 2026-11-20), of which mono and gecko are about 440 MB. CrossOver 26.3.0 takes 998 MB.
 
 ## Source offer
 

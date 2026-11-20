@@ -52,7 +52,7 @@ check "a clean run succeeds" 0 "$(status_of main)"
 EXPECTED_FILES=$(( ${#PACKED_SOURCES[@]} + ${#SOURCE_DOWNLOADS[@]} ))
 check "every source is in the output plus its sums" "$((EXPECTED_FILES + 1))" "$(find "$SOURCES_OUT_DIR" -type f | wc -l | tr -d ' ')"
 check "SHA256SUMS lists every file" "$EXPECTED_FILES" "$(wc -l < "$SOURCES_OUT_DIR/$SOURCES_SUMS_NAME" | tr -d ' ')"
-check "SHA256SUMS verifies with shasum" 0 "$(status_of bash -c 'cd "$1" && shasum -a 256 -c "$2"' _ "$SOURCES_OUT_DIR" "$SOURCES_SUMS_NAME")"
+check "SHA256SUMS verifies with shasum" 0 "$(status_of eval '( cd "$SOURCES_OUT_DIR" && shasum -a 256 -c "$SOURCES_SUMS_NAME" )')"
 check "the sources were downloaded to DEPS_SRC_DIR" 1 "$([[ -s "$(archive_path MONO_SRC)" ]] && echo 1 || echo 0)"
 check "the downloaded archives are copied unchanged" "$(sha256_of "$REMOTE/$(source_file_name NETTLE)")" "$(sha256_of "$SOURCES_OUT_DIR/$(source_file_name NETTLE)")"
 

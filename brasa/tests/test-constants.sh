@@ -27,7 +27,6 @@ REG_HEADER='Windows Registry Editor Version 5.00'
 REG_KEY_HEADER='[HKEY_CURRENT_USER\Software\Brasa\AppendCommandLine]'
 REG_VALUE_NAME="steamwebhelper.exe"
 REG_PATH_VALUE_NAME='bin\steamwebhelper.exe'
-REG_OTHER_VALUE_NAME="other.exe"
 
 # ---------- Programs under test ----------
 HELPER_EXE="steamwebhelper.exe"
