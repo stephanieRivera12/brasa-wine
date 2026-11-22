@@ -429,6 +429,10 @@ static int convert_control_headers(struct msghdr *hdr, WSABUF *control)
 
 #if defined(IP_TOS)
                     case IP_TOS:
+#if defined(__APPLE__) && defined(IP_RECVTOS)
+                    /* Brasa: macOS labels the received TOS with the option name, not IP_TOS. */
+                    case IP_RECVTOS:
+#endif
                     {
                         INT tos = *(unsigned char *)CMSG_DATA(cmsg_unix);
                         ptr = fill_control_message( WS_IPPROTO_IP, WS_IP_TOS, ptr, &ctlsize,

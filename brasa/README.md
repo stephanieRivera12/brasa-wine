@@ -10,7 +10,7 @@ https://www.codeweavers.com/crossover/source). The first commit imports it uncha
 
 ## What changes against CodeWeavers
 
-Brasa adds four things; the diff against the first commit is exactly these:
+Brasa adds five things; the diff against the first commit is exactly these:
 
 - the scripts and tests in `brasa/`;
 - the "per-program extra command-line options" patch in `dlls/kernelbase` (`brasa_cmdline.c`,
@@ -19,7 +19,11 @@ Brasa adds four things; the diff against the first commit is exactly these:
   identity (bundle identifier `app.brasa.wineloader`, bundle name `Brasa`) instead of the CrossOver
   names;
 - `programs/iexplore/iexplore.inf`: the display name of the HTML engine entry is "Wine HTML engine"
-  instead of "CrossOver HTML engine".
+  instead of "CrossOver HTML engine";
+- `dlls/ntdll/unix/socket.c`: on macOS a datagram received with `IP_RECVTOS` on carries its TOS in
+  a control message of type `IP_RECVTOS`, not `IP_TOS`; it now reaches the program as `IP_TOS`, as on
+  Windows. Without it Steam's networking sockets assert ("No control data returned even though we
+  asked for TOS") and start `steamerrorreporter64` in every game that uses them.
 
 Every other CodeWeavers patch is kept untouched.
 
@@ -42,7 +46,7 @@ line): a type other than `REG_SZ`, an empty value, more than 1024 characters, co
 lives in the private Wine prefix, so it grants nothing a program in that prefix could not already do.
 
 Tests: `brasa/tests/build-tests.sh && brasa/tests/run-tests.sh <engine root>` (spawns test programs
-in a throwaway prefix; prints `PASS|FAIL <case>`), and `brasa/tests/test-run-lib.sh` for the pure
+in a throwaway prefix; prints `PASS|FAIL <case>`; `receivesTos` covers the socket change), and `brasa/tests/test-run-lib.sh` for the pure
 functions of the runner.
 
 ## Where each library comes from
@@ -81,7 +85,7 @@ brasa/tests/test-lib.sh   # tests of the pure functions of the scripts
 
 ## Packaging
 
-`brasa/package.sh` turns the stage into `vendor/engines/wine-brasa-26.3.0-2/` (spec 5.5): real
+`brasa/package.sh` turns the stage into `vendor/engines/wine-brasa-26.3.0-3/` (spec 5.5): real
 copies of the libraries (never links into the work folder), wine-mono and wine-gecko unpacked in
 `share/wine/`, licences in `licenses/`, debug info stripped (Mach-O with `strip -S`, PE dlls with
 the mingw `strip`), a `VERSION` file, and no write permission for group or others. The DXMT files
