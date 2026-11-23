@@ -152,7 +152,7 @@ check "libtasn1 licences come from the official tarball" 2 \
 check "no licence is read from CodeWeavers' gnutls tree any more" 0 \
   "$(printf '%s\n' "${LICENSE_FILES_REAL[@]}" | grep -c "$GNUTLS_REAL_DIR/gnutls" || true)"
 check "the gnutls version is the official 3.8.13" "3.8.13" "$GNUTLS_VERSION"
-check "the engine revision is 26.3.0-2" "26.3.0-2" "$ENGINE_VERSION"
+check "the engine revision is 26.3.0-3" "26.3.0-3" "$ENGINE_VERSION"
 check "the gnutls soname Wine expects is unchanged" "libgnutls.30.dylib" "$LIB_GNUTLS"
 check "Wine's LICENSE is listed" 1 "$(printf '%s\n' "${LICENSE_FILES_REAL[@]}" | grep -c "^wine|$BRASA_FORK_DIR/LICENSE$" || true)"
 check "the real Wine libs folder exists" 1 "$([[ -d "$REAL_WINE_LIBS_DIR" ]] && echo 1 || echo 0)"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs the command-line patch cases against a built engine in a throwaway prefix under $TMPDIR.
+# Runs the engine patch cases (command line, received TOS) against a built engine in a throwaway prefix under $TMPDIR.
 # Run: brasa/tests/build-tests.sh && brasa/tests/run-tests.sh <engine root>
 # Prints "PASS|FAIL <case>" per case; exit 0 when every case passes.
 set -euo pipefail
@@ -221,6 +221,15 @@ case_logHasNoContent() {
   expect "log-leaks-markers" "" "$(markers_found_in "$log" "$BRASA_OPTIONS_MARKER" "$BRASA_ARGS_MARKER" | tr '\n' ' ')"
 }
 
+# Steam's networking sockets assert when IP_RECVTOS gives no IP_TOS control message.
+case_receivesTos() {
+  local arch received
+  for arch in "${TEST_ARCHS[@]}"; do
+    received="$("$WINE" "$TESTS_OUT_DIR/$arch/$RECV_TOS_EXE" "$SENT_TOS" 2>/dev/null | tr -d '\r' || true)"
+    expect "recv-tos-$arch" "$EXPECTED_TOS_LINE" "$received"
+  done
+}
+
 # ---------- Performance ----------
 PERF_VARIANTS=(none mismatch match)
 PERF_ECHO_REL="bin/$ECHO_EXE"
@@ -276,7 +285,7 @@ CASES=(
   appendsOptions noKeyUnchanged otherExeUnchanged caseInsensitive similarNamesUnchanged
   spacesAndQuotes appNameOnly noArguments uncPath from32to64 from64to32 tooLongIgnored
   emptyIgnored wrongTypeIgnored controlCharsIgnored resultTooLongIgnored maxOptionsAccepted resultAtLimitAppended resultOverLimitIgnored logHasNoContent
-  performance unreadableKey
+  performance unreadableKey receivesTos
 )
 
 run_case() {

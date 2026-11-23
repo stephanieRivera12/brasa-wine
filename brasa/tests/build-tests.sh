@@ -19,7 +19,7 @@ compiler_of() {
 build_program() {
   local arch="$1" program="$2" compiler
   compiler="$(compiler_of "$arch")"
-  "$compiler" "${TEST_CFLAGS[@]}" -o "$TESTS_OUT_DIR/$arch/$program.exe" "$TESTS_SRC_DIR/$program.c"
+  "$compiler" "${TEST_CFLAGS[@]}" -o "$TESTS_OUT_DIR/$arch/$program.exe" "$TESTS_SRC_DIR/$program.c" "${TEST_LIBS[@]}"
 }
 
 for arch in "${TEST_ARCHS[@]}"; do

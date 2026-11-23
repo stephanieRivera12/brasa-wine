@@ -25,7 +25,7 @@ BRASA_VISIBLE_RESULTS=(brasa-deps brasa-deps-src brasa-wine brasa-wine-stage)
 
 # ---------- Engine ----------
 ENGINE_PREFIX="/opt/wine-brasa"
-ENGINE_VERSION="26.3.0-2"
+ENGINE_VERSION="26.3.0-3"
 STAGE_ENGINE_DIR="$STAGE_DIR$ENGINE_PREFIX"   # what build.sh installs
 ENGINE_REQUIRED_PATHS=(
   bin/wine

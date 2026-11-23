@@ -10,7 +10,8 @@ TEST_ARCHS=(x86_64 i386)
 TEST_CC_x86_64="x86_64-w64-mingw32-gcc"
 TEST_CC_i386="i686-w64-mingw32-gcc"
 TEST_CFLAGS=(-O2 -Wall -Wextra -Werror -municode)
-TEST_PROGRAMS=(spawner echo-cmdline deny-key)
+TEST_LIBS=(-lws2_32)
+TEST_PROGRAMS=(spawner echo-cmdline deny-key recv-tos)
 
 # ---------- Test prefix ----------
 TEST_PREFIX_NAME_PREFIX="brasa-wine-tests-"
@@ -56,6 +57,11 @@ LOG_MARKER_REG="log-control-marker.reg"
 EMPTY_REG="empty.reg"
 WRONG_TYPE_REGS=(wrong-type-dword.reg wrong-type-multisz.reg wrong-type-expandsz.reg)
 CONTROL_CHAR_REGS=(control-newline.reg control-nul.reg control-del.reg)
+
+# ---------- Received TOS ----------
+RECV_TOS_EXE="recv-tos.exe"
+SENT_TOS=32                  # DSCP CS1: survives loopback untouched
+EXPECTED_TOS_LINE="tos=$SENT_TOS"
 
 # ---------- Performance ----------
 PERF_WARMUP_ROUNDS=1
